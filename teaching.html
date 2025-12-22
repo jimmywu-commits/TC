@@ -1,0 +1,1105 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Teaching Persona 測驗</title>
+  <style>
+    :root { --gap: 14px; --radius: 14px; }
+    html { font-size: 130%; } /* 全站字級放大 30% */ /* 全站字級放大 30% */
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans TC", sans-serif; line-height: 1.5; background:#f7f7fb; color:#111; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px; }
+    .card { background: #fff; border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0,0,0,.07); padding: 20px; }
+    h1 { font-size: 22px; margin: 0 0 8px; }
+    h2 { font-size: 18px; margin: 18px 0 8px; }
+    h3 { margin:0 0 8px; font-size:16px; }
+    p { margin: 8px 0; }
+    .muted { color:#444; font-size: 14px; }
+    .btns { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    button { border: 0; border-radius: 12px; padding: 10px 14px; cursor: pointer; font-weight: 700; }
+    .primary { background:#2f4bff; color:#fff; }
+    .ghost { background:#eef0ff; color:#111; }
+    .danger { background:#ffecec; color:#a20000; }
+
+    .q { border: 1px solid #eee; border-radius: 12px; padding: 14px; margin: 12px 0; background:#fff; }
+    .q-head { display:flex; justify-content: space-between; gap:10px; align-items: baseline; }
+    .q-title { font-weight: 800; }
+    .q-meta { font-size: 12px; color:#666; }
+    .choices { display:grid; gap: 10px; margin-top: 10px; }
+    .choice { display:flex; gap:10px; align-items:flex-start; border: 1px solid #e8e8ef; border-radius: 12px; padding: 10px 12px; background:#fafafe; }
+    .choice input { margin-top: 3px; }
+    .small { font-size: 13px; color:#333; }
+
+    .grid2 { display:grid; grid-template-columns: 1fr; gap: var(--gap); }
+    @media (min-width: 900px) { .grid2 { grid-template-columns: 1.1fr .9fr; } }
+    .grid2b { display:grid; grid-template-columns: 1fr; gap: var(--gap); }
+    @media (min-width: 900px) { .grid2b { grid-template-columns: 1fr 1fr; } }
+
+    .result { border-radius: 16px; padding: 16px; background: #f9fbff; border: 1px solid #e7ecff; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      padding: 1px 6px; border-radius: 8px; background:#f2f2f6; border:1px solid #e9e9ef; font-size: 12px;
+    }
+    .footer { margin-top: 16px; color:#666; font-size: 12px; }
+    .hidden { display:none; }
+    .tag { font-weight: 900; }
+
+    /* score visual */
+    .vizWrap { display:grid; gap: 12px; }
+    .radarCard { border: 1px solid #e7ecff; border-radius: 14px; padding: 12px; background:#fff; }
+    .legend { display:grid; gap: 8px; margin-top: 10px; }
+    .legendItem { display:flex; justify-content:space-between; gap: 10px; padding: 10px 12px; background:#fff; border:1px solid #e7ecff; border-radius: 12px; }
+    .chip { display:inline-flex; align-items:center; gap:8px; font-weight:800; }
+    .dot { width:10px; height:10px; border-radius:999px; background:#2f4bff; display:inline-block; }
+    .dot.b { background:#111; opacity:.65; }
+    .dot.c { background:#111; opacity:.45; }
+    .dot.d { background:#111; opacity:.25; }
+    .scoreNum { color:#444; font-size: 13px; }
+
+    .badgeRow { display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
+    .badge { border:1px solid #e7ecff; background:#fff; padding:8px 10px; border-radius: 999px; font-size: 13px; }
+    .badge b { font-weight: 900; }
+
+    /* print */
+    @media print {
+      .btns, #quizCard { display:none !important; }
+      body { background:#fff; }
+      .card { box-shadow:none; }
+    }
+  
+
+    /* ====== Typography overrides (min 16px) ======
+       With html { font-size:130% }, 0.8rem ≈ 16.6px. */
+    body { font-size: 1rem; }
+    h1 { font-size: 1.4rem; }
+    h2 { font-size: 1.15rem; }
+    h3 { font-size: 1rem; }
+
+    .muted, .small, .badge, .scoreNum, .q-meta, .kbd, .footer { font-size: 0.8rem; }
+    button { font-size: 0.85rem; }
+
+
+    /* ====== Layout override: results stacked vertically (no left/right columns) ====== */
+    .grid2, .grid2b { grid-template-columns: 1fr !important; }
+
+    /* ====== Result headline icon ====== */
+    .resultIcon { display:inline-flex; vertical-align: -4px; margin-right: 8px; }
+    .resultIcon svg { width: 28px; height: 28px; }
+
+    /* ====== Pie chart ====== */
+    .pieWrap { display:block; }
+    #scorePie { display:block; max-width: 360px; width: 100%; height: auto; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Teaching Persona 測驗</h1>
+      <p class="muted">
+        這份測驗會協助你辨識你在教學時最自然的傾向，並給你一套最適合的自我訓練方式。
+        <br/>完成約 <span class="kbd">6–10 分鐘</span>。請以「你實際會怎麼做」作答，而不是「你覺得應該怎麼做」。
+      </p>
+
+      <div class="btns">
+        <button class="primary" id="btnStart">開始測驗</button>
+        <button class="ghost" id="btnFillDemo" title="快速填入示範答案，方便你測試流程">填入示範答案</button>
+        <button class="danger" id="btnReset" title="清空作答">清空作答</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="quizCard" style="margin-top: 16px;">
+      <h2>作答區</h2>
+      <p class="muted">每題擇一。若你覺得兩個都像，選「你更常做的那個」。</p>
+      <div id="questions"></div>
+      <div class="btns">
+        <button class="primary" id="btnSubmit">看結果</button>
+        <button class="ghost" id="btnScrollTop">回到頂部</button>
+      </div>
+      <p id="err" class="muted" style="color:#a20000;"></p>
+    </div>
+
+    <div class="card hidden" id="resultCard" style="margin-top: 16px;">
+      <h2>你的結果</h2>
+
+      <div id="resultSummary" class="result"></div>
+
+      <div class="grid2" style="margin-top: 14px;">
+        <div class="result">
+          <h3>分數分佈（更直覺的圖像）</h3>
+          <div class="muted">用雷達圖看「平衡 vs 偏重」，比長條更容易判讀。</div>
+
+          <div class="vizWrap" style="margin-top:10px;">
+            <div class="radarCard">
+              <canvas id="radar" width="520" height="360" aria-label="分數雷達圖"></canvas>
+              <div class="badgeRow" id="patternBadges"></div>
+            </div>
+
+            <div>
+              
+<h3 style="margin:0 0 8px;">分數分佈圓餅圖</h3>
+<div class="small muted">以百分比顯示四個向度的相對比例，方便一眼看出強弱差距。</div>
+<div class="pieWrap" style="margin-top:10px;">
+  <canvas id="scorePie" width="320" height="320" aria-label="分數圓餅圖"></canvas>
+  <div class="legend" id="scoreLegend" style="margin-top:10px;"></div>
+</div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="result">
+          <h3>更深入的解讀</h3>
+          <div id="deepAnalysis"></div>
+        </div>
+      </div>
+
+      
+      <div class="result" id="prepGuides" style="margin-top:14px;">
+        <h3>依你的主要向度，這樣準備課程</h3>
+        <div id="prepGuidesContent"></div>
+      </div>
+
+      <div class="result" id="prepSystem" style="margin-top:14px;">
+        <h3>測完就能用的「備課流程」</h3>
+        <p class="muted">這是一套把課做得清楚、好玩、又能落地的備課方法（適合 90 分鐘、小班互動、像一場 show 的節奏）。</p>
+
+        <h3 style="margin-top:12px;">一張備課地圖（照順序做）</h3>
+        <ol style="margin:0 0 0 18px;">
+          <li><b>一句話主題</b>：這堂課要讓學員「會做什麼」或「看懂什麼差別」？（一句話寫完）</li>
+          <li><b>開場 2 分鐘</b>：用一個情境/案例/錯誤示範，讓人立刻想看下去（Hook）。</li>
+          <li><b>體驗練習 ×2</b>：每 10–15 分鐘一次「動起來」：做、投票、兩兩交換、快速改稿。</li>
+          <li><b>解說只講關鍵</b>：每段解說只留 3 點判準或 3 個步驟（超過就會過載）。</li>
+          <li><b>成果落地物</b>：每段互動後要留下「一句話 / 一張圖 / 一個小作品」。</li>
+          <li><b>收尾 5 分鐘</b>：回顧今天 3 個重點＋交代下一步怎麼練（最小行動）。</li>
+        </ol>
+
+        <h3 style="margin-top:12px;">90 分鐘推薦節奏（可直接套）</h3>
+        <ul style="margin:0 0 0 18px;">
+          <li>0–5：開場 Hook（讓人想看下去）</li>
+          <li>5–15：核心概念/判準（只講 3 點）＋小示範</li>
+          <li>15–30：練習 1（做）→ 快速回饋（收斂到下一步）</li>
+          <li>30–45：案例/示範（好 vs 更好）→ 觀點整理</li>
+          <li>45–60：練習 2（再做一次）→ 對照前後差異</li>
+          <li>60–80：加強段（常見錯誤/QA/加碼技巧）</li>
+          <li>80–90：收尾（3 重點 + 下一步練習）</li>
+        </ul>
+
+        <h3 style="margin-top:12px;">備課檢查清單（備完自查）</h3>
+        <ul style="margin:0 0 0 18px;">
+          <li>每一段都有「目的」：這段結束學員要知道/會做/感覺到什麼？</li>
+          <li>每 10–15 分鐘一定有一次互動或實作（避免變成講座）。</li>
+          <li>每次互動後都有落地物（帶得走的成果）。</li>
+          <li>全課至少有一次「普通→更好」或「錯→對」的對照示範。</li>
+          <li>收尾有下一步練法（不是只有說謝謝）。</li>
+        </ul>
+
+        <h3 style="margin-top:12px;">可直接複製的備課模板</h3>
+        <div class="result" style="background:#fff; border:1px dashed #e7ecff;">
+          <div class="small"><b>主題一句話：</b>＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿</div>
+          <div class="small"><b>學員要帶走的能力/判準：</b>①＿＿＿ ②＿＿＿ ③＿＿＿</div>
+          <div class="small"><b>開場 Hook：</b>用＿＿＿＿（情境/案例/錯誤）吸進來</div>
+          <div class="small"><b>練習 1：</b>做＿＿＿＿ → 產出＿＿＿＿</div>
+          <div class="small"><b>示範/案例對照：</b>好 vs 更好（差在＿＿＿＿）</div>
+          <div class="small"><b>練習 2：</b>再做一次 → 對照前後差異</div>
+          <div class="small"><b>收尾下一步：</b>回去用＿＿＿＿方式練 2 次（每次 20 分鐘）</div>
+        </div>
+      </div>
+
+<div class="grid2b" style="margin-top: 14px;">
+        <div class="result">
+          <h3>你的「最佳自我訓練方式」</h3>
+          <div id="trainingPlan"></div>
+        </div>
+        <div class="result">
+          <h3>把課做成「像一場 show / 電影」的建議</h3>
+          <div id="movieTips"></div>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="btnRetake">再測一次</button>
+        <button class="ghost" id="btnCopy">複製結果摘要</button>
+        <button class="ghost" id="btnPrint">列印 / 存成 PDF</button>
+      </div>
+
+      <div class="footer">
+        ＊提醒：多數人會是「混合傾向」。本測驗用來幫你找到最自然的教學肌肉，不是把你關進分類框。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== 內部代碼（不對使用者顯示） ======
+    const PROFILES = {
+      A: {
+        label: "A",
+        title: "結構/節奏導向",
+        oneLiner: "你很重視課程的節奏、段落與轉場，擅長把複雜內容拆成可跟做的步驟。",
+        strengths: ["節奏掌控佳", "結構清晰", "能把複雜變成步驟"],
+        risks: ["容易過度腳本化", "臨場彈性不足時會卡住"],
+        bestTraining: [
+          "用「分鏡表」備課：Hook → 任務 → 卡點 → 轉折 → 收束",
+          "每次試講只練一件事：開場/轉折/收尾其中一個鏡頭",
+          "做 10 分鐘版本：逼自己抓出核心節奏"
+        ],
+        movieTips: [
+          "把整堂課當成分鏡：每段只回答一個問題（這段要讓學員『感覺到』什麼？）。",
+          "每 10–12 分鐘必須有一次「動起來」（練習/投票/兩兩交換），避免變成講座。",
+          "寫下 3 個轉場句：『現在你已經…接下來我們要…』，讓節奏自然推進。"
+        ]
+      },
+      B: {
+        label: "B",
+        title: "舞台/互動導向",
+        oneLiner: "你擅長用能量與互動讓學員投入，能把內容做得「很好看、很好玩」。",
+        strengths: ["氣氛與帶場強", "互動自然", "讓課『很好看』"],
+        risks: ["容易漂移主線", "內容落地度不足會空"],
+        bestTraining: [
+          "每段設計一個「可視覺化的輸出」：一句話/一張圖/一個小作品",
+          "練 3 種互動節奏：提問、投票、兩兩交換",
+          "為每段加「錨點句」：說完這句就回主線"
+        ],
+        movieTips: [
+          "每段互動後一定要有「落地物」：一句話總結 / 一張圖 / 一個小作品截圖。",
+          "為每段準備一個「主線錨點句」，嗨完立即回主題，避免漂移。",
+          "設計一個「高潮 demo」：從普通→更好，讓學員看到變化。"
+        ]
+      },
+      C: {
+        label: "C",
+        title: "陪跑/回饋導向",
+        oneLiner: "你善於提問與回饋，能抓到學員卡點，讓學員在實作中快速進步。",
+        strengths: ["陪跑與回饋強", "能抓到學員卡點", "學員成長感高"],
+        risks: ["節奏可能慢", "若目標不清易變聊天"],
+        bestTraining: [
+          "備一套「黃金三問」：你現在卡在哪？你試過什麼？下一步你要做哪個最小動作？",
+          "把回饋標準化：優點一句 + 建議一句 + 下一步一句",
+          "設定時間盒：每輪討論 4 分鐘必須收斂到行動"
+        ],
+        movieTips: [
+          "把體驗回路做滿：做→卡→解→再做（至少兩輪），學員才有成就感。",
+          "設時間盒：討論再精彩也要收斂到「下一步最小動作」。",
+          "用標準化回饋句式：優點一句 + 建議一句 + 下一步一句。"
+        ]
+      },
+      D: {
+        label: "D",
+        title: "案例/觀點導向",
+        oneLiner: "你用案例與觀點建立說服力，擅長提供判準，讓學員「看見差距」。",
+        strengths: ["案例與洞察強", "觀點鮮明", "容易建立信任"],
+        risks: ["容易資訊量過載", "若沒體驗環會變成講座"],
+        bestTraining: [
+          "每個案例只留 1 個訊息：我想你記得什麼？",
+          "用「對照策展」：好 vs 更好，並說出判準",
+          "每 10 分鐘插入一個小練習：立刻套用到學員作品/題目"
+        ],
+        movieTips: [
+          "每個案例只留一個訊息：你希望學員記得的判準是什麼？",
+          "用「對照策展」：好 vs 更好，並說清楚差別（用 3 點判準就好）。",
+          "每 10 分鐘插一個小練習：讓學員把判準套到自己的作品/題目。"
+        ]
+      }
+    };
+
+    // 題目：選項不出現任何「XX型」字樣；內部對應 A/B/C/D
+    const QUESTIONS = [
+      { title:"你要準備一堂給平面設計師的課，第一步你會做什麼？", choices:[
+        { k:"A", text:"先畫出整堂課的節奏與段落（像分鏡），確定起承轉合。" },
+        { k:"D", text:"先找 10 個案例，挑 3 個最能代表這堂課的觀點。" },
+        { k:"C", text:"先想學員可能卡在哪，設計提問與練習讓他們自己走出來。" },
+        { k:"B", text:"先想開場要怎麼讓人『哇』，再把互動安排進去。" }
+      ]},
+      { title:"你最常被學員稱讚的一件事是？", choices:[
+        { k:"B", text:"上課很有趣、很有臨場感、很像在看 show。" },
+        { k:"A", text:"講得很有條理，跟著做就會了。" },
+        { k:"C", text:"你很懂我卡在哪，回饋讓我進步很快。" },
+        { k:"D", text:"案例很強、觀點很精準，讓我突然看懂差別。" }
+      ]},
+      { title:"當現場氣氛變冷，你通常會怎麼救場？", choices:[
+        { k:"B", text:"立刻換節奏：做個快速互動或小活動，拉回能量。" },
+        { k:"C", text:"用一個好問題讓大家先說，從學員回應找切入點。" },
+        { k:"A", text:"回到流程：縮短講述、改成下一個任務，讓節奏動起來。" },
+        { k:"D", text:"拿出一個更有衝擊力的案例對照，讓大家重新聚焦。" }
+      ]},
+      { title:"你最不喜歡的教學狀況是？", choices:[
+        { k:"A", text:"時間爆掉、節奏失控、收不了尾。" },
+        { k:"D", text:"內容沒有判準、缺乏密度，只有氣氛很嗨但沒帶走。" },
+        { k:"C", text:"講師一直講、學員沒動手也沒被看見。" },
+        { k:"B", text:"現場很安靜、互動很尷尬，像在念稿。" }
+      ]},
+      { title:"你更傾向用哪種方式讓學員學會？", choices:[
+        { k:"C", text:"讓他們先做出一版，給回饋，再做第二版。" },
+        { k:"D", text:"用案例讓他們看見差距，再給判準。" },
+        { k:"A", text:"把方法拆成步驟，一步一步帶走。" },
+        { k:"B", text:"先讓他們『感覺到』，再把原因說清楚。" }
+      ]},
+      { title:"你在備課時最常投入時間在？", choices:[
+        { k:"D", text:"蒐集、挑選、整理案例，讓觀點有說服力。" },
+        { k:"A", text:"設計整堂課結構、時間分配與每段轉場。" },
+        { k:"B", text:"開場、故事、demo 呈現方式，讓它好看。" },
+        { k:"C", text:"練提問、回饋語句、練習題設計，確保學員會做。" }
+      ]},
+      { title:"你覺得一堂課最重要的成敗指標是？", choices:[
+        { k:"C", text:"學員輸出真的變好了，也知道下一步怎麼練。" },
+        { k:"A", text:"節奏漂亮、每段都有目的、收尾有力量。" },
+        { k:"B", text:"全場投入、有情緒起伏，回去還會想分享。" },
+        { k:"D", text:"學員腦中多了一套判準，從此看東西不一樣。" }
+      ]},
+      { title:"你最自然的授課節奏比較像？", choices:[
+        { k:"A", text:"先定框架 → 示範 → 練習 → 回顧（流程感強）。" },
+        { k:"B", text:"先抓注意力 → 一路互動帶節奏（舞台感強）。" },
+        { k:"C", text:"先讓學員說 → 釐清卡點 → 回饋 → 再推一步（陪跑感強）。" },
+        { k:"D", text:"先給觀點 → 用案例證明 → 給判準（觀點感強）。" }
+      ]},
+      { title:"如果想把課做得像電影，你會先強化哪一段？", choices:[
+        { k:"B", text:"開場 Hook：一秒抓住人，先讓人想看下去。" },
+        { k:"A", text:"起承轉合與轉場：每段都有目的，高潮準時出現。" },
+        { k:"D", text:"高潮的「震撼案例」：讓人瞬間看懂差異。" },
+        { k:"C", text:"體驗回路：做→卡→解→再做，讓人有成就感。" }
+      ]},
+      { title:"如果只能保留一個你最擅長的教學武器，你會選？", choices:[
+        { k:"D", text:"案例與觀點（我能讓你看懂什麼是好）。" },
+        { k:"C", text:"提問與回饋（我能讓你做得更好）。" },
+        { k:"A", text:"結構與節奏（我能讓你學得更順）。" },
+        { k:"B", text:"能量與帶場（我能讓你投入並記得）。" }
+      ]},
+      { title:"你最想提升的一塊是？（選你最常被提醒的那個）", choices:[
+        { k:"A", text:"我想更有臨場感與互動（不要太像念稿）。" },
+        { k:"B", text:"我想更能收斂與落地（不要太嗨但空）。" },
+        { k:"D", text:"我想更能讓大家動手（不要只停在看案例）。" },
+        { k:"C", text:"我想更能掌控節奏（不要討論太久收不回）。" }
+      ]}
+,
+      { title:"你在課堂上最常使用的『示範』形式是？", choices:[
+      { k:"A", text:"把做法拆成步驟，邊做邊標記每一步的目的。" },
+      { k:"D", text:"用前後對照示範，說清楚「差別」與判準。" },
+      { k:"B", text:"用一段高完成度 demo 先抓住注意力，再拆解關鍵。" },
+      { k:"C", text:"先讓學員做一輪，再用示範回應他們共同卡點。" },
+      ]},
+
+      { title:"當你發現學員程度差異很大，你會優先怎麼調整？", choices:[
+      { k:"C", text:"把練習拆成多層難度，並用回饋讓每層都有進步。" },
+      { k:"A", text:"把流程切成清楚的小段，讓不同程度都能跟上節奏。" },
+      { k:"D", text:"提供不同案例路徑：基礎案例與進階案例各一條。" },
+      { k:"B", text:"用更強的互動節奏，把注意力與能量先拉齊。" },
+      ]},
+
+      { title:"你最自然的『收尾』方式比較像？", choices:[
+      { k:"A", text:"回顧今天的流程與重點，清楚交代下一步怎麼做。" },
+      { k:"D", text:"用一個最後的對照案例，讓判準在腦中定錨。" },
+      { k:"C", text:"請大家交出小成果，給一句回饋與一個下一步。" },
+      { k:"B", text:"用一句有情緒的總結或故事，讓大家想立刻分享。" },
+      ]},
+
+      { title:"你覺得學員最容易在什麼時候流失注意力？", choices:[
+      { k:"B", text:"節奏太平、缺乏起伏，沒有事件與互動。" },
+      { k:"A", text:"段落目的不清楚，講到哪裡都像同一段。" },
+      { k:"D", text:"案例太多但沒有判準，變成資訊堆疊。" },
+      { k:"C", text:"練習後沒有回饋與收斂，不知道自己做得如何。" },
+      ]},
+
+      { title:"如果你要讓課更『像電影』，你會增加哪種設計？", choices:[
+      { k:"A", text:"在中段加一個明確轉折（從簡單到更難/從錯到對）。" },
+      { k:"B", text:"加入角色與情境（讓學員代入某個真實任務）。" },
+      { k:"C", text:"設計第二輪挑戰，讓學員看見自己前後差異。" },
+      { k:"D", text:"用一個關鍵案例做「揭露」，讓觀點瞬間成立。" },
+      ]},
+    ];
+
+    // ====== DOM ======
+    const quizCard = document.getElementById("quizCard");
+    const resultCard = document.getElementById("resultCard");
+    const questionsEl = document.getElementById("questions");
+    const errEl = document.getElementById("err");
+    const patternBadgesEl = document.getElementById("patternBadges");
+    const scoreLegendEl = document.getElementById("scoreLegend");
+
+    const btnStart = document.getElementById("btnStart");
+    const btnSubmit = document.getElementById("btnSubmit");
+    const btnReset = document.getElementById("btnReset");
+    const btnRetake = document.getElementById("btnRetake");
+    const btnFillDemo = document.getElementById("btnFillDemo");
+    const btnScrollTop = document.getElementById("btnScrollTop");
+    const btnCopy = document.getElementById("btnCopy");
+    const btnPrint = document.getElementById("btnPrint");
+
+    // ====== Render Questions ======
+    function renderQuestions() {
+      questionsEl.innerHTML = "";
+      QUESTIONS.forEach((q, idx) => {
+        const qDiv = document.createElement("div");
+        qDiv.className = "q";
+        qDiv.innerHTML = `
+          <div class="q-head">
+            <div class="q-title">Q${idx+1}. ${q.title}</div>
+            <div class="q-meta">必填</div>
+          </div>
+          <div class="choices">
+            ${q.choices.map((c, j) => {
+              const id = `q${idx}_c${j}`;
+              return `
+                <label class="choice" for="${id}">
+                  <input type="radio" name="q${idx}" id="${id}" value="${c.k}">
+                  <div class="small">${c.text}</div>
+                </label>
+              `;
+            }).join("")}
+          </div>
+        `;
+        questionsEl.appendChild(qDiv);
+      });
+    }
+
+    // ====== State ======
+    function getAnswers() {
+      const answers = [];
+      for (let i=0; i<QUESTIONS.length; i++) {
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+        answers.push(selected ? selected.value : null);
+      }
+      return answers;
+    }
+
+    function clearAnswers() {
+      document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+      errEl.textContent = "";
+    }
+
+    function fillDemoAnswers() {
+      // 每次點擊都隨機選擇一組答案
+      QUESTIONS.forEach((q, i) => {
+        const radios = document.querySelectorAll(`input[name="q${i}"]`);
+        if (!radios.length) return;
+        const pick = Math.floor(Math.random() * radios.length);
+        radios[pick].checked = true;
+      });
+    }
+
+    function score(answers) {
+      const s = { A:0, B:0, C:0, D:0 };
+      answers.forEach(a => { if (a) s[a] += 2; });
+      return s;
+    }
+
+    function rankProfiles(scores) {
+      return Object.entries(scores)
+        .sort((a,b) => b[1]-a[1])
+        .map(([k,v]) => ({ key:k, score:v, ...PROFILES[k] }));
+    }
+
+    function validateAllAnswered(answers) {
+      const missing = answers.map((a,i) => a ? null : i+1).filter(Boolean);
+      if (missing.length) {
+        errEl.textContent = `你還有 ${missing.length} 題未作答：Q${missing.join(", Q")}`;
+        return false;
+      }
+      errEl.textContent = "";
+      return true;
+    }
+
+    // ====== Result content builders ======
+    function buildSummary(sorted, scores) {
+      const max = QUESTIONS.length * 2;
+      const top1 = sorted[0], top2 = sorted[1];
+      const isHybrid = top2.score >= top1.score - 2;
+
+      const headline = isHybrid
+        ? `<span class="resultIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l2.6 5.9 6.4.6-4.8 4.1 1.4 6.3L12 16.9 6.4 18.9l1.4-6.3-4.8-4.1 6.4-.6L12 2z" fill="currentColor" opacity=".2"/><path d="M12 3.6l2.1 4.7 5.1.5-3.8 3.3 1.1 5-4.5-2.6-4.5 2.6 1.1-5-3.8-3.3 5.1-.5L12 3.6z" stroke="currentColor" stroke-width="1.3" fill="none"/></svg></span>你呈現兩個很接近的傾向：<span class="tag">${top1.title}</span> × <span class="tag">${top2.title}</span>。`
+        : `<span class="resultIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l2.6 5.9 6.4.6-4.8 4.1 1.4 6.3L12 16.9 6.4 18.9l1.4-6.3-4.8-4.1 6.4-.6L12 2z" fill="currentColor" opacity=".2"/><path d="M12 3.6l2.1 4.7 5.1.5-3.8 3.3 1.1 5-4.5-2.6-4.5 2.6 1.1-5-3.8-3.3 5.1-.5L12 3.6z" stroke="currentColor" stroke-width="1.3" fill="none"/></svg></span>你最明顯的傾向是：<span class="tag">${top1.title}</span>。`;
+
+      return `
+        <p style="margin:0 0 8px;"><b>${headline}</b></p>
+        <p class="small" style="margin:0;">${top1.oneLiner}</p>
+
+        <h3 style="margin-top:12px;">你最可能的優勢</h3>
+        <ul style="margin:0 0 0 18px;">${top1.strengths.map(s => `<li>${s}</li>`).join("")}</ul>
+
+        <h3 style="margin-top:12px;">你要小心的盲點</h3>
+        <ul style="margin:0 0 0 18px;">${top1.risks.map(s => `<li>${s}</li>`).join("")}</ul>
+
+        <p class="muted" style="margin-top:10px;">分數越高表示你越自然會使用那套教學肌肉（不是代表好壞）。最高分是 ${max} 分。</p>
+      `;
+    }
+
+    function buildTraining(sorted, scores) {
+      const top1 = sorted[0], top2 = sorted[1];
+      const isHybrid = top2.score >= top1.score - 2;
+      const focus = isHybrid ? [top1, top2] : [top1];
+
+      const blocks = focus.map(p => `
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight:900; margin-bottom:6px;">${p.title}｜訓練法（最適配）</div>
+          <ol style="margin:0 0 0 18px;">
+            ${p.bestTraining.map(s => `<li>${s}</li>`).join("")}
+          </ol>
+        </div>
+      `).join("");
+
+      const weekly = `
+        <div style="border-top:1px solid #e7ecff; padding-top:10px;">
+          <div style="font-weight:900; margin-bottom:6px;">一週 2 次、每次 20 分鐘的最小訓練菜單</div>
+          <ol style="margin:0 0 0 18px;">
+            <li>挑一個「鏡頭」練：開場 Hook / 轉折 / 收尾（三選一）。</li>
+            <li>錄音或錄影 5 分鐘試講，回看只檢查一件事：節奏 / 落地輸出 / 提問品質 / 案例判準（四選一）。</li>
+            <li>下一次只改一個小動作（例如：加一句錨點句、縮短講述 30 秒、把練習改成 2 步）。</li>
+          </ol>
+        </div>
+      `;
+      return blocks + weekly;
+    }
+
+    function buildMovieTips(sorted, scores) {
+      const top = sorted[0].key;
+      const second = sorted[1].key;
+      const isHybrid = scores[second] >= scores[top] - 2;
+
+      const list = (arr) => `<ul style="margin:0 0 0 18px;">${arr.map(x => `<li>${x}</li>`).join("")}</ul>`;
+
+      return `
+        <p class="small" style="margin:0 0 10px;">
+          你可以用「SHOW 型備課公式」：<b>開場吸睛 → 體驗練習×2 → 觀點整理 → 帶走的作品/清單</b>
+        </p>
+        <div class="grid2b">
+          <div>
+            <div style="font-weight:900; margin-bottom:6px;">主力傾向的電影化技巧</div>
+            ${list(PROFILES[top].movieTips)}
+          </div>
+          <div>
+            <div style="font-weight:900; margin-bottom:6px;">想更完整（補強另一邊）</div>
+            ${
+              isHybrid
+                ? list(PROFILES[second].movieTips)
+                : `<p class="small" style="margin:0 0 8px;">你的第二高分是 <b>${PROFILES[second].title}</b>：加一個它的招式，通常能讓課更像電影。</p>` + list(PROFILES[second].movieTips)
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    // ====== Deeper analysis ======
+    function analyzePattern(scores) {
+      const max = QUESTIONS.length * 2;
+      const vals = Object.values(scores);
+      const keys = Object.keys(scores);
+      const sortedVals = [...vals].sort((a,b)=>a-b);
+      const min = sortedVals[0];
+      const maxv = sortedVals[sortedVals.length-1];
+      const range = maxv - min;
+
+      const mean = vals.reduce((a,b)=>a+b,0) / vals.length;
+      const variance = vals.reduce((acc,v)=>acc+(v-mean)*(v-mean),0) / vals.length;
+      const std = Math.sqrt(variance);
+
+      const NEAR_ALL = 2;
+      const NEAR_PAIR = 2;
+      const EXTREME_HIGH = max - 4;
+      const EXTREME_LOW = 2;
+
+      const gap1 = sortedVals[1] - sortedVals[0];
+      const gap2 = sortedVals[2] - sortedVals[1];
+      const gap3 = sortedVals[3] - sortedVals[2];
+
+      const badges = [];
+      const notes = [];
+
+      if (range <= NEAR_ALL) {
+        badges.push({text:"平衡型輪廓", why:"四個分數差距很小"});
+        notes.push(`
+          <p class="small"><b>四個分數很接近，通常代表：</b></p>
+          <ul style="margin:0 0 0 18px;">
+            <li>你有多種教學手段，但可能還沒有固定的「主力打法」（或情境不同你會切換）。</li>
+            <li>優點是彈性高；挑戰是辨識度不夠明確，備課容易想做很多但不好收斂。</li>
+            <li>建議：先選一個你最想建立辨識度的方向，做 2 週刻意練習，讓它成為你的招牌。</li>
+          </ul>
+        `);
+      }
+
+      const sortedPairs = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+      const top = sortedPairs[0], second = sortedPairs[1];
+      if ((top[1] - second[1]) <= NEAR_PAIR && range > NEAR_ALL) {
+        badges.push({text:"雙主力輪廓", why:"前兩名非常接近"});
+        notes.push(`
+          <p class="small"><b>前兩名很接近，通常代表：</b></p>
+          <ul style="margin:0 0 0 18px;">
+            <li>你有兩個很強的教學引擎，能形成一套很完整的教法。</li>
+            <li>建議：把它寫成固定公式：先用其中一個做帶入，再用另一個做落地與收束。</li>
+          </ul>
+        `);
+      }
+
+      const extremeHigh = keys.filter(k => scores[k] >= EXTREME_HIGH);
+      const extremeLow = keys.filter(k => scores[k] <= EXTREME_LOW);
+
+      if (extremeHigh.length) {
+        badges.push({text:"高度偏重輪廓", why:"有一個方向非常突出"});
+        notes.push(`
+          <p class="small"><b>有一個分數非常高，通常代表：</b></p>
+          <ul style="margin:0 0 0 18px;">
+            <li>你已經有明顯招牌與辨識度。</li>
+            <li>風險是整堂課只靠同一招會顯得單一。</li>
+            <li>建議：挑一個最弱項做最小補強（用模板補），例如每 12 分鐘補一次互動/練習/案例判準/節奏收斂。</li>
+          </ul>
+        `);
+      }
+
+      if (extremeLow.length) {
+        badges.push({text:"盲區提醒", why:"至少有一個方向幾乎沒被使用"});
+        notes.push(`
+          <p class="small"><b>有一個分數非常低，通常代表：</b></p>
+          <ul style="margin:0 0 0 18px;">
+            <li>那個方向不是你的自然肌肉，或你目前很少用到它。</li>
+            <li>不代表你不行；只代表你需要用工具化方式補（套模板最有效）。</li>
+          </ul>
+        `);
+      }
+
+      if (gap2 >= 4 && (sortedVals[2] - sortedVals[1]) === Math.max(gap1, gap2, gap3)) {
+        badges.push({text:"剪刀型輪廓", why:"兩個方向明顯高、兩個明顯低"});
+        notes.push(`
+          <p class="small"><b>兩高兩低（剪刀型）通常代表：</b></p>
+          <ul style="margin:0 0 0 18px;">
+            <li>你很適合做明確定位的課（特色鮮明）。</li>
+            <li>建議：把弱的方向用固定插槽補齊，而不是逼自己全面變強。</li>
+          </ul>
+        `);
+      }
+
+      const highCount = vals.filter(v => v >= mean + 1).length;
+      const lowCount  = vals.filter(v => v <= mean - 1).length;
+      if (highCount >= 3 && lowCount >= 1 && range > NEAR_ALL) {
+        badges.push({text:"近全能輪廓", why:"三個方向都不弱"});
+        notes.push(`
+          <p class="small"><b>三高一低通常代表：</b></p>
+          <ul style="margin:0 0 0 18px;">
+            <li>你很有機會做出很完整的課，但容易過度加料。</li>
+            <li>建議：每段只選一個主訴求（節奏/互動/回饋/觀點），其他用小補丁帶過。</li>
+          </ul>
+        `);
+      }
+
+      if (!notes.length) {
+        badges.push({text:"一般輪廓", why:"有主力、也有可補強處"});
+        notes.push(`
+          <p class="small"><b>你的分數輪廓顯示你有主力傾向，也保留一定彈性。</b></p>
+          <ul style="margin:0 0 0 18px;">
+            <li>建議：把主力傾向做成招牌段落，再挑一個弱項做模板化補強。</li>
+          </ul>
+        `);
+      }
+
+      const balanceLevel =
+        range <= 2 ? "高度平衡"
+        : range <= 6 ? "中度平衡"
+        : "偏重明顯";
+
+      const stability =
+        std <= 1.5 ? "穩定（差距小）"
+        : std <= 3.5 ? "有主力（差距中）"
+        : "聚焦（差距大）";
+
+      const metricBlock = `
+        <div class="result" style="background:#fff; margin:10px 0 0; border:1px dashed #e7ecff;">
+          <div class="small"><b>分數分佈小提示</b></div>
+          <div class="small">最高與最低相差 <b>${range}</b> 分：差距越小表示越平均；差距越大表示你有更明顯的強項。</div>
+          <div class="small">整體狀態：<b>${stability}</b>（用來描述你是偏平均、偏主力，或是強項很聚焦。）</div>
+        </div>
+      `;
+return { badges, html: notes.join("") + metricBlock };
+    }
+
+    
+    // ====== Course Preparation Guides (per primary dimension) ======
+    const PREP_GUIDES = {
+      A: {
+        title: "結構／節奏向度｜以流程與段落為主引擎",
+        bullets: [
+          "先畫節奏，不先寫內容：把課拆成 4–6 段，每段只回答一個問題。",
+          "為每段準備轉場句，幫助學員跟上進度。",
+          "把收尾當成一段來備：一句總結＋一個行動指令。"
+        ],
+        tip: "清楚比豐富更重要，避免一段想做太多事。"
+      },
+      B: {
+        title: "舞台／互動向度｜以能量與投入感為主引擎",
+        bullets: [
+          "每段互動都要有落地物：一句話、一個判準或一個小步驟。",
+          "先寫一條主線句，課中重複 3–5 次。",
+          "設計一個高潮示範（普通→更好 或 錯→對）。"
+        ],
+        tip: "熱鬧之後要收斂，學員才帶得走。"
+      },
+      C: {
+        title: "陪跑／回饋向度｜以看人與修正為主引擎",
+        bullets: [
+          "固定一套回饋句型：看到什麼＋建議什麼＋下一步。",
+          "練習一定兩輪：做 → 回饋 → 再做。",
+          "討論一定有出口，最後收斂成可行動的下一步。"
+        ],
+        tip: "結構不是限制，而是幫你省力。"
+      },
+      D: {
+        title: "案例／觀點向度｜以判準與眼界為主引擎",
+        bullets: [
+          "每個案例只服務一個觀點，說清楚要看懂的差異。",
+          "案例成對出現：好 vs 更好、錯誤 vs 修正。",
+          "每 10 分鐘就套用一次，哪怕只是在腦中判斷。"
+        ],
+        tip: "沒有套用，案例就只是欣賞。"
+      }
+    };
+
+    function renderPrepGuides(sorted) {
+      const container = document.getElementById("prepGuidesContent");
+      if (!container) return;
+
+      const top1 = sorted[0];
+      const top2 = sorted[1];
+      const isHybrid = top2 && (top2.score >= top1.score - 2);
+
+      const keys = isHybrid ? [top1.key, top2.key] : [top1.key];
+
+      container.innerHTML = keys.map(k => {
+        const g = PREP_GUIDES[k];
+        return `
+          <div style="margin-bottom:12px;">
+            <div style="font-weight:900; margin-bottom:6px;">${g.title}</div>
+            <ul style="margin:0 0 6px 18px;">
+              ${g.bullets.map(b => `<li>${b}</li>`).join("")}
+            </ul>
+            <div class="small">提醒：${g.tip}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+
+    // ====== Radar chart rendering (Canvas) ======
+    function drawRadar(scores) {
+      const canvas = document.getElementById("radar");
+      const ctx = canvas.getContext("2d");
+
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = 520, cssH = 360;
+      canvas.style.width = cssW + "px";
+      canvas.style.height = cssH + "px";
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+
+      ctx.clearRect(0,0,cssW,cssH);
+
+      const order = ["A","B","C","D"];
+      const baseLabels = ["結構/節奏","舞台/互動","陪跑/回饋","案例/觀點"];
+      const labels = baseLabels.map((t, i) => `${t}  ${scores[order[i]]}`);
+      const max = QUESTIONS.length * 2;
+
+      const cx = cssW/2, cy = cssH/2 + 6;
+      const R = Math.min(cssW, cssH) * 0.33;
+
+      const rings = 5;
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(0,0,0,0.10)";
+      for (let r=1; r<=rings; r++) {
+        const rr = (R * r / rings);
+        ctx.beginPath();
+        for (let i=0;i<4;i++){
+          const ang = (-Math.PI/2) + i*(Math.PI*2/4);
+          const x = cx + rr * Math.cos(ang);
+          const y = cy + rr * Math.sin(ang);
+          if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "rgba(0,0,0,0.18)";
+      ctx.fillStyle = "rgba(0,0,0,0.75)";
+      ctx.font = "16px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial";
+      for (let i=0;i<4;i++){
+        const ang = (-Math.PI/2) + i*(Math.PI*2/4);
+        const x = cx + R * Math.cos(ang);
+        const y = cy + R * Math.sin(ang);
+        ctx.beginPath();
+        ctx.moveTo(cx,cy);
+        ctx.lineTo(x,y);
+        ctx.stroke();
+
+        const lx = cx + (R + 18) * Math.cos(ang);
+        const ly = cy + (R + 18) * Math.sin(ang);
+        const text = labels[i];
+        const w = ctx.measureText(text).width;
+        ctx.fillText(text, lx - w/2, ly + 4);
+      }
+
+      const points = order.map((k, i) => {
+        const v = scores[k] / max;
+        const ang = (-Math.PI/2) + i*(Math.PI*2/4);
+        return { x: cx + (R * v) * Math.cos(ang), y: cy + (R * v) * Math.sin(ang) };
+      });
+
+      ctx.beginPath();
+      points.forEach((p,i)=>{ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
+      ctx.closePath();
+      ctx.fillStyle = "rgba(47,75,255,0.18)";
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(47,75,255,0.85)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(47,75,255,0.95)";
+      points.forEach(p=>{
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = "rgba(0,0,0,0.65)";
+      ctx.font = "16px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial";
+    }
+
+    
+    // ====== Pie chart rendering (Canvas) ======
+    
+    // ====== Pie chart rendering (Canvas) ======
+    function drawPie(scores) {
+      var canvas = document.getElementById("scorePie");
+      if (!canvas) return;
+      var ctx = canvas.getContext("2d");
+
+      var dpr = window.devicePixelRatio || 1;
+      var cssSize = 320;
+      canvas.style.width = cssSize + "px";
+      canvas.style.height = cssSize + "px";
+      canvas.width = Math.round(cssSize * dpr);
+      canvas.height = Math.round(cssSize * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      ctx.clearRect(0, 0, cssSize, cssSize);
+
+      var labelsMap = { A:"結構／節奏", B:"舞台／互動", C:"陪跑／回饋", D:"案例／觀點" };
+      var order = ["A","B","C","D"];
+
+      // sort by score desc for drawing & labeling consistency
+      var entries = order.map(function(k){ return [k, scores[k] || 0]; })
+                        .sort(function(a,b){ return b[1]-a[1]; });
+      var total = entries.reduce(function(acc, it){ return acc + it[1]; }, 0) || 1;
+
+      var cx = cssSize/2, cy = cssSize/2;
+      var R = cssSize * 0.36;         // donut outer radius (smaller to leave label space)
+      var r0 = R * 0.52;              // donut inner radius
+      var lineR = cssSize * 0.41;     // leader line bend
+      var labelR = cssSize * 0.49;    // label anchor radius
+      var alphas = [0.85, 0.65, 0.45, 0.25];
+
+      var startAng = -Math.PI/2;
+      var mids = [];
+
+      // draw slices
+      for (var i=0;i<entries.length;i++){
+        var k = entries[i][0], v = entries[i][1];
+        var frac = v / total;
+        var endAng = startAng + frac * Math.PI * 2;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, R, startAng, endAng);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(47,75,255," + (alphas[i] || 0.25) + ")";
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,0.95)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        mids.push({ k:k, v:v, mid:(startAng+endAng)/2, frac:frac });
+        startAng = endAng;
+      }
+
+      // center white circle
+      ctx.beginPath();
+      ctx.arc(cx, cy, r0, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.06)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // labels outside with clamping (so text won't be clipped)
+      ctx.font = "14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Arial";
+      ctx.strokeStyle = "rgba(0,0,0,0.25)";
+      ctx.lineWidth = 1;
+
+      var pad = 12;
+      var minGap = 18;
+
+      var points = mids.map(function(p){
+        var pct = Math.round((p.v / (QUESTIONS.length * 2)) * 100);
+        var text = labelsMap[p.k] + " " + pct + "%";
+        var x = cx + labelR * Math.cos(p.mid);
+        var y = cy + labelR * Math.sin(p.mid);
+        var side = (Math.cos(p.mid) >= 0) ? "R" : "L";
+        return { k:p.k, v:p.v, mid:p.mid, frac:p.frac, pct:pct, text:text, x:x, y:y, side:side };
+      });
+
+      function adjust(list){
+        list.sort(function(a,b){ return a.y-b.y; });
+        for (var j=1;j<list.length;j++){
+          if (list[j].y - list[j-1].y < minGap) list[j].y = list[j-1].y + minGap;
+        }
+        for (var j2=0;j2<list.length;j2++){
+          list[j2].y = Math.max(pad, Math.min(cssSize - pad, list[j2].y));
+        }
+        return list;
+      }
+
+      var left = adjust(points.filter(function(p){ return p.side==="L"; }));
+      var right = adjust(points.filter(function(p){ return p.side==="R"; }));
+      points = left.concat(right);
+
+      for (var pidx=0;pidx<points.length;pidx++){
+        var p = points[pidx];
+        var w = ctx.measureText(p.text).width;
+
+        var tx = (p.side==="R") ? p.x : (p.x - w);
+        // clamp x so label won't be clipped
+        tx = Math.min(cssSize - pad - w, Math.max(pad, tx));
+        var ty = p.y + 5;
+
+        var boxX = tx - 5;
+        var boxY = ty - 14;
+        var boxW = w + 10;
+        var boxH = 18;
+
+        // leader line from slice edge -> bend -> label box edge
+        var x1 = cx + R * Math.cos(p.mid);
+        var y1 = cy + R * Math.sin(p.mid);
+        var x2 = cx + lineR * Math.cos(p.mid);
+        var y2 = cy + lineR * Math.sin(p.mid);
+        var x3 = (p.side==="R") ? boxX : (boxX + boxW);
+        var y3 = boxY + boxH/2;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.stroke();
+
+        // label background
+        ctx.fillStyle = "rgba(255,255,255,0.96)";
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+
+        // label text
+        ctx.fillStyle = "rgba(0,0,0,0.88)";
+        ctx.fillText(p.text, tx, ty);
+      }
+    }
+
+function renderLegend(scores) {
+      const max = QUESTIONS.length * 2;
+
+      // 依分數高→低排序呈現，並顯示百分比（取整數）
+      const ranked = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+
+      scoreLegendEl.innerHTML = ranked.map(([k, v]) => {
+        const pct = Math.round((v / max) * 100);
+        return `
+          <div class="legendItem">
+            <div class="chip">${PROFILES[k].title}</div>
+            <div class="scoreNum">${pct}%</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderBadges(badges) {
+      patternBadgesEl.innerHTML = badges.map(b => `<span class="badge"><b>${b.text}</b>｜${b.why}</span>`).join("");
+    }
+
+    // ====== Orchestration ======
+    function showQuiz() {
+      quizCard.classList.remove("hidden");
+      resultCard.classList.add("hidden");
+      window.scrollTo({ top: quizCard.offsetTop - 10, behavior: "smooth" });
+    }
+
+    function showResults(scores, sorted) {
+      document.getElementById("resultSummary").innerHTML = buildSummary(sorted, scores);
+
+      drawRadar(scores);
+      drawPie(scores);
+      renderLegend(scores);
+
+      const pattern = analyzePattern(scores);
+      renderBadges(pattern.badges);
+      document.getElementById("deepAnalysis").innerHTML = pattern.html;
+
+      document.getElementById("trainingPlan").innerHTML = buildTraining(sorted, scores);
+      document.getElementById("movieTips").innerHTML = buildMovieTips(sorted, scores);
+      renderPrepGuides(sorted);
+
+      resultCard.classList.remove("hidden");
+      window.scrollTo({ top: resultCard.offsetTop - 10, behavior: "smooth" });
+    }
+
+    // ====== init & events ======
+    renderQuestions();
+
+    btnStart.addEventListener("click", showQuiz);
+    btnScrollTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    btnReset.addEventListener("click", () => { showQuiz(); clearAnswers(); });
+    btnFillDemo.addEventListener("click", () => { showQuiz(); fillDemoAnswers(); });
+
+    btnSubmit.addEventListener("click", () => {
+      const answers = getAnswers();
+      if (!validateAllAnswered(answers)) {
+        const idx = answers.findIndex(a => !a);
+        const qEl = document.querySelectorAll(".q")[idx];
+        if (qEl) qEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      const scores = score(answers);
+      const sorted = rankProfiles(scores);
+      showResults(scores, sorted);
+    });
+
+    btnRetake.addEventListener("click", () => { showQuiz(); clearAnswers(); });
+
+    btnCopy.addEventListener("click", async () => {
+      const answers = getAnswers();
+      if (!answers.every(Boolean)) { alert("請先完成測驗並產生結果。"); return; }
+
+      const scores = score(answers);
+      const sorted = rankProfiles(scores);
+      const top1 = sorted[0], top2 = sorted[1];
+      const hybrid = top2.score >= top1.score - 2;
+
+      const pattern = analyzePattern(scores);
+      const text =
+`Teaching Persona 測驗結果
+- 最明顯傾向：${top1.title}（${scores[top1.key]} 分）
+- 次高傾向：${top2.title}（${scores[top2.key]} 分）
+- 狀態：${hybrid ? "雙主力/混合" : "主力明顯"}
+- 輪廓標記：${pattern.badges.map(b=>b.text).join("、")}
+- 一句話：${top1.oneLiner}
+- 建議訓練（3）：
+  1) ${top1.bestTraining[0]}
+  2) ${top1.bestTraining[1]}
+  3) ${top1.bestTraining[2]}`;
+
+      try { await navigator.clipboard.writeText(text); alert("已複製結果摘要！"); }
+      catch (e) { alert("複製失敗（可能瀏覽器不允許）。你可以手動選取結果文字。"); }
+    });
+
+    btnPrint.addEventListener("click", () => window.print());
+
+    window.addEventListener("resize", () => {
+      if (resultCard.classList.contains("hidden")) return;
+      const answers = getAnswers();
+      if (!answers.every(Boolean)) return;
+      const sc = score(answers);
+      drawRadar(sc);
+      drawPie(sc);
+    });
+  </script>
+</body>
+</html>
