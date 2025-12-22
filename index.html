@@ -88,6 +88,19 @@
     /* ====== Pie chart ====== */
     .pieWrap { display:block; }
     #scorePie { display:block; max-width: 360px; width: 100%; height: auto; }
+
+    /* ====== Mobile responsive ====== */
+    @media (max-width: 520px){
+      .wrap{ padding: 14px; }
+      .card{ padding: 16px; }
+      .grid2, .grid2b { grid-template-columns: 1fr !important; }
+      .btnRow{ flex-direction: column; gap: 10px; }
+      .btnRow button{ width: 100%; }
+      .legendItem{ gap: 10px; }
+      .chip{ max-width: 100%; }
+      .resultIcon svg{ width: 24px; height: 24px; }
+      #radar, #scorePie{ margin-left:auto; margin-right:auto; }
+    }
 </style>
 </head>
 <body>
@@ -867,8 +880,10 @@ return { badges, html: notes.join("") + metricBlock };
       var ctx = canvas.getContext("2d");
 
       var dpr = window.devicePixelRatio || 1;
-      var cssSize = 320;
-      canvas.style.width = cssSize + "px";
+      var parentW = (canvas.parentElement && canvas.parentElement.clientWidth) ? canvas.parentElement.clientWidth : 320;
+      parentW = Math.min(parentW, window.innerWidth - 48);
+      var cssSize = Math.max(260, Math.min(360, Math.floor(parentW)));
+canvas.style.width = cssSize + "px";
       canvas.style.height = cssSize + "px";
       canvas.width = Math.round(cssSize * dpr);
       canvas.height = Math.round(cssSize * dpr);
