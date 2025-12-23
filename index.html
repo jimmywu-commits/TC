@@ -101,6 +101,10 @@
       .resultIcon svg{ width: 24px; height: 24px; }
       #radar, #scorePie{ margin-left:auto; margin-right:auto; }
     }
+
+    /* ====== Fluid charts (keep aspect ratio) ====== */
+    .chartBox { width: 100%; max-width: 420px; margin-left:auto; margin-right:auto; display:flex; justify-content:center; }
+    canvas { width: 100%; height: auto; aspect-ratio: 1 / 1; display: block; margin: 0 auto; }
 </style>
 </head>
 <body>
@@ -142,7 +146,7 @@
 
           <div class="vizWrap" style="margin-top:10px;">
             <div class="radarCard">
-              <canvas id="radar" width="520" height="360" aria-label="分數雷達圖"></canvas>
+              <div class="chartBox"><canvas id="radar" width="520" height="360" aria-label="分數雷達圖"></canvas></div>
               <div class="badgeRow" id="patternBadges"></div>
             </div>
 
@@ -151,7 +155,7 @@
 <h3 style="margin:0 0 8px;">分數分佈圓餅圖</h3>
 <div class="small muted">以百分比顯示四個向度的相對比例，方便一眼看出強弱差距。</div>
 <div class="pieWrap" style="margin-top:10px;">
-  <canvas id="scorePie" width="320" height="320" aria-label="分數圓餅圖"></canvas>
+  <div class="chartBox"><canvas id="scorePie" width="320" height="320" aria-label="分數圓餅圖"></canvas></div>
   <div class="legend" id="scoreLegend" style="margin-top:10px;"></div>
 </div>
 
@@ -788,101 +792,151 @@ return { badges, html: notes.join("") + metricBlock };
     // ====== Radar chart rendering (Canvas) ======
     function drawRadar(scores) {
       const canvas = document.getElementById("radar");
+      if (!canvas) return;
       const ctx = canvas.getContext("2d");
 
+      // Uniform scaling: keep square, only shrink/grow with width
+      const rectW = Math.floor(canvas.getBoundingClientRect().width || 360);
+      const cssSize = Math.max(260, Math.min(440, rectW));
       const dpr = window.devicePixelRatio || 1;
-      const cssW = 520, cssH = 360;
-      canvas.style.width = cssW + "px";
-      canvas.style.height = cssH + "px";
-      canvas.width = Math.round(cssW * dpr);
-      canvas.height = Math.round(cssH * dpr);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
 
-      ctx.clearRect(0,0,cssW,cssH);
+      canvas.style.width = cssSize + "px";
+      canvas.style.height = cssSize + "px";
+      canvas.width = Math.round(cssSize * dpr);
+      canvas.height = Math.round(cssSize * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const order = ["A","B","C","D"];
-      const baseLabels = ["結構/節奏","舞台/互動","陪跑/回饋","案例/觀點"];
-      const labels = baseLabels.map((t, i) => `${t}  ${scores[order[i]]}`);
+      ctx.clearRect(0, 0, cssSize, cssSize);
+
+      const cx = cssSize / 2;
+      const cy = cssSize / 2;
+
+      // Leave room for labels (avoid clipping on mobile)
+      const R = cssSize * 0.33;
+      const LABEL_R = Math.min(cssSize / 2 - 14, R + 24);
+
+      const keys = ["A","B","C","D"];
       const max = QUESTIONS.length * 2;
 
-      const cx = cssW/2, cy = cssH/2 + 6;
-      const R = Math.min(cssW, cssH) * 0.33;
+      const axisLabel = {
+        A: "結構／節奏",
+        B: "舞台／互動",
+        C: "陪跑／回饋",
+        D: "案例／觀點"
+      };
 
-      const rings = 5;
+      function ang(i){ return (-Math.PI/2) + (i * (Math.PI * 2 / keys.length)); }
+
+      // ===== Traditional spider web (multiple rings) =====
+      const rings = 6; // more lines = more "traditional" look
       ctx.lineWidth = 1;
-      ctx.strokeStyle = "rgba(0,0,0,0.10)";
-      for (let r=1; r<=rings; r++) {
-        const rr = (R * r / rings);
+
+      for (let ring = 1; ring <= rings; ring++) {
+        const rr = (R * ring) / rings;
         ctx.beginPath();
-        for (let i=0;i<4;i++){
-          const ang = (-Math.PI/2) + i*(Math.PI*2/4);
-          const x = cx + rr * Math.cos(ang);
-          const y = cy + rr * Math.sin(ang);
-          if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        for (let i = 0; i < keys.length; i++) {
+          const a = ang(i);
+          const x = cx + rr * Math.cos(a);
+          const y = cy + rr * Math.sin(a);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
         ctx.closePath();
+        // alternate alpha to create a richer web
+        const alpha = (ring % 2 === 0) ? 0.12 : 0.08;
+        ctx.strokeStyle = "rgba(0,0,0," + alpha + ")";
         ctx.stroke();
       }
 
-      ctx.strokeStyle = "rgba(0,0,0,0.18)";
-      ctx.fillStyle = "rgba(0,0,0,0.75)";
-      ctx.font = "16px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial";
-      for (let i=0;i<4;i++){
-        const ang = (-Math.PI/2) + i*(Math.PI*2/4);
-        const x = cx + R * Math.cos(ang);
-        const y = cy + R * Math.sin(ang);
+      // spokes
+      ctx.strokeStyle = "rgba(0,0,0,0.14)";
+      for (let i = 0; i < keys.length; i++) {
+        const a = ang(i);
         ctx.beginPath();
-        ctx.moveTo(cx,cy);
-        ctx.lineTo(x,y);
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
         ctx.stroke();
-
-        const lx = cx + (R + 18) * Math.cos(ang);
-        const ly = cy + (R + 18) * Math.sin(ang);
-        const text = labels[i];
-        const w = ctx.measureText(text).width;
-        ctx.fillText(text, lx - w/2, ly + 4);
       }
 
-      const points = order.map((k, i) => {
-        const v = scores[k] / max;
-        const ang = (-Math.PI/2) + i*(Math.PI*2/4);
-        return { x: cx + (R * v) * Math.cos(ang), y: cy + (R * v) * Math.sin(ang) };
-      });
+      // subtle tick dots on spokes (adds detail without clutter)
+      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      for (let i = 0; i < keys.length; i++) {
+        const a = ang(i);
+        for (let t = 1; t < rings; t++) {
+          const rr = (R * t) / rings;
+          const x = cx + rr * Math.cos(a);
+          const y = cy + rr * Math.sin(a);
+          ctx.beginPath();
+          ctx.arc(x, y, 1.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
 
+      // ===== Data polygon =====
       ctx.beginPath();
-      points.forEach((p,i)=>{ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
+        const v = Math.max(0, Math.min(max, scores[k] || 0));
+        const rr = (v / max) * R;
+        const a = ang(i);
+        const x = cx + rr * Math.cos(a);
+        const y = cy + rr * Math.sin(a);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
       ctx.closePath();
-      ctx.fillStyle = "rgba(47,75,255,0.18)";
+      ctx.fillStyle = "rgba(47,75,255,0.14)";
       ctx.fill();
-
-      ctx.strokeStyle = "rgba(47,75,255,0.85)";
+      ctx.strokeStyle = "rgba(47,75,255,0.75)";
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      ctx.fillStyle = "rgba(47,75,255,0.95)";
-      points.forEach(p=>{
+      // vertex dots
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
+        const v = Math.max(0, Math.min(max, scores[k] || 0));
+        const rr = (v / max) * R;
+        const a = ang(i);
+        const x = cx + rr * Math.cos(a);
+        const y = cy + rr * Math.sin(a);
         ctx.beginPath();
-        ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+        ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(47,75,255,0.95)";
         ctx.fill();
-      });
+      }
 
-      ctx.fillStyle = "rgba(0,0,0,0.65)";
-      ctx.font = "16px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial";
+      // axis labels (clamped)
+      ctx.fillStyle = "rgba(0,0,0,0.82)";
+      ctx.font = "14px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial";
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
+        const a = ang(i);
+        let tx = cx + LABEL_R * Math.cos(a);
+        let ty = cy + LABEL_R * Math.sin(a);
+
+        const text = axisLabel[k];
+        const w = ctx.measureText(text).width;
+
+        if (Math.cos(a) > 0.15) tx -= 0;
+        else if (Math.cos(a) < -0.15) tx -= w;
+        else tx -= w / 2;
+
+        ty += 5;
+
+        const pad = 10;
+        tx = Math.max(pad, Math.min(cssSize - pad - w, tx));
+        ty = Math.max(pad + 12, Math.min(cssSize - pad, ty));
+
+        ctx.fillText(text, tx, ty);
+      }
     }
 
-    
-    // ====== Pie chart rendering (Canvas) ======
-    
-    // ====== Pie chart rendering (Canvas) ======
     function drawPie(scores) {
       var canvas = document.getElementById("scorePie");
       if (!canvas) return;
       var ctx = canvas.getContext("2d");
 
       var dpr = window.devicePixelRatio || 1;
-      var parentW = (canvas.parentElement && canvas.parentElement.clientWidth) ? canvas.parentElement.clientWidth : 320;
-      parentW = Math.min(parentW, window.innerWidth - 48);
-      var cssSize = Math.max(260, Math.min(360, Math.floor(parentW)));
+      var rectW = Math.floor(canvas.getBoundingClientRect().width || 320);
+      var cssSize = Math.max(260, Math.min(360, rectW));
 canvas.style.width = cssSize + "px";
       canvas.style.height = cssSize + "px";
       canvas.width = Math.round(cssSize * dpr);
@@ -1108,6 +1162,7 @@ function renderLegend(scores) {
     btnPrint.addEventListener("click", () => window.print());
 
     window.addEventListener("resize", () => {
+      // redraw charts to fit container width
       if (resultCard.classList.contains("hidden")) return;
       const answers = getAnswers();
       if (!answers.every(Boolean)) return;
