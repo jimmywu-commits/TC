@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>蝦皮GD內部講師風格測驗</title>
+  <title>Teaching Persona 測驗</title>
   <style>
     :root { --gap: 14px; --radius: 14px; }
     html { font-size: 130%; } /* 全站字級放大 30% */ /* 全站字級放大 30% */
@@ -146,7 +146,7 @@
 
           <div class="vizWrap" style="margin-top:10px;">
             <div class="radarCard">
-              <div class="chartBox"><canvas id="radar" width="520" height="360" aria-label="分數雷達圖"></canvas></div>
+              <div class="chartBox"><canvas id="radar" width="320" height="320" aria-label="分數雷達圖"></canvas></div>
               <div class="badgeRow" id="patternBadges"></div>
             </div>
 
@@ -796,13 +796,10 @@ return { badges, html: notes.join("") + metricBlock };
       const ctx = canvas.getContext("2d");
 
       // Uniform scaling: keep square, only shrink/grow with width
-      const rectW = Math.floor(canvas.getBoundingClientRect().width || 360);
-      const cssSize = Math.max(260, Math.min(440, rectW));
+      const rectW = Math.floor((canvas.parentElement && canvas.parentElement.clientWidth) ? canvas.parentElement.clientWidth : (canvas.getBoundingClientRect().width || 360));
+      const cssSize = Math.max(180, Math.min(440, rectW));
       const dpr = window.devicePixelRatio || 1;
-
-      canvas.style.width = cssSize + "px";
-      canvas.style.height = cssSize + "px";
-      canvas.width = Math.round(cssSize * dpr);
+canvas.width = Math.round(cssSize * dpr);
       canvas.height = Math.round(cssSize * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
@@ -935,11 +932,9 @@ return { badges, html: notes.join("") + metricBlock };
       var ctx = canvas.getContext("2d");
 
       var dpr = window.devicePixelRatio || 1;
-      var rectW = Math.floor(canvas.getBoundingClientRect().width || 320);
-      var cssSize = Math.max(260, Math.min(360, rectW));
-canvas.style.width = cssSize + "px";
-      canvas.style.height = cssSize + "px";
-      canvas.width = Math.round(cssSize * dpr);
+      var rectW = Math.floor((canvas.parentElement && canvas.parentElement.clientWidth) ? canvas.parentElement.clientWidth : (canvas.getBoundingClientRect().width || 320));
+      var cssSize = Math.max(180, Math.min(360, rectW));
+canvas.width = Math.round(cssSize * dpr);
       canvas.height = Math.round(cssSize * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
