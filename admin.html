@@ -3,119 +3,181 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Teaching Persona 後台｜受測者資料</title>
+  <title>Teaching Persona 後台（預覽/編輯）</title>
   <style>
     :root { --gap: 14px; --radius: 14px; }
     html { font-size: 130%; }
     body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans TC", sans-serif; line-height:1.5; background:#f7f7fb; color:#111; }
-    .wrap{ max-width: 1100px; margin: 0 auto; padding: 24px; }
-    .card{ background:#fff; border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0,0,0,.07); padding: 20px; }
-    h1{ font-size: 1.4rem; margin:0 0 6px; }
-    h2{ font-size: 1.15rem; margin: 18px 0 8px; }
-    p{ margin: 8px 0; }
-    .muted{ color:#444; font-size: 0.8rem; }
-    .row{ display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    input, textarea{
-      border:1px solid #e7ecff;
-      border-radius: 12px;
-      padding: 10px 12px;
-      outline:none;
-      font-weight: 700;
-      background:#fff;
-      font-size: 0.9rem;
-    }
-    input:focus, textarea:focus{ border-color:#2f4bff; box-shadow: 0 0 0 3px rgba(47,75,255,0.12); }
-    textarea{ width: 100%; min-height: 120px; font-weight: 600; line-height: 1.5; }
-    button{
-      border:0; border-radius: 12px; padding: 10px 14px; cursor:pointer; font-weight: 800;
-      font-size: 0.85rem;
-    }
-    .primary{ background:#2f4bff; color:#fff; }
-    .ghost{ background:#eef0ff; color:#111; }
-    .danger{ background:#ffecec; color:#a20000; }
-    button[disabled]{ opacity:.55; cursor:not-allowed; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    .card { background:#fff; border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0,0,0,.07); padding: 20px; }
+    h1 { font-size: 1.4rem; margin:0 0 8px; }
+    h2 { font-size: 1.15rem; margin:18px 0 8px; }
+    h3 { font-size: 1rem; margin:0 0 8px; }
+    p { margin:8px 0; }
+    .muted { color:#444; font-size: 0.8rem; }
+    .small { font-size: 0.8rem; color:#333; }
 
-    .table{ width: 100%; border-collapse: collapse; }
-    .table th, .table td{ padding: 10px 10px; border-bottom: 1px solid #eef0ff; text-align:left; vertical-align: top; }
-    .table th{ font-size: 0.85rem; color:#222; }
-    .pill{ display:inline-block; padding: 2px 8px; border:1px solid #e7ecff; border-radius: 999px; font-size: 0.8rem; background:#fff; }
-    .grid2{ display:grid; grid-template-columns: 1fr; gap: var(--gap); margin-top: 14px; }
-    @media(min-width: 960px){ .grid2{ grid-template-columns: 1.1fr .9fr; } }
-    .box{ border:1px solid #e7ecff; border-radius: 14px; padding: 14px; background:#f9fbff; }
-    .small{ font-size: 0.8rem; color:#333; }
-    .footer{ margin-top: 16px; font-size: 0.8rem; color:#666; }
-    .hidden{ display:none; }
-    code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 0.8rem; }
+    .btns { display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px; }
+    button { border:0; border-radius:12px; padding:10px 14px; cursor:pointer; font-weight:800; font-size:0.85rem; }
+    button:disabled{ opacity:.45; cursor:not-allowed; }
+    .primary { background:#2f4bff; color:#fff; }
+    .ghost { background:#eef0ff; color:#111; }
+    .danger { background:#ffecec; color:#a20000; }
+
+    .layout { display:grid; grid-template-columns: 360px 1fr; gap: var(--gap); margin-top: 16px; align-items:start; }
+    @media (max-width: 980px){
+      .layout{ grid-template-columns: 1fr; }
+    }
+
+    .list { display:grid; gap:10px; }
+    .row { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:12px; border:1px solid #e7ecff; border-radius: 12px; background:#fff; cursor:pointer; }
+    .row:hover{ background:#f9fbff; }
+    .row.active{ border-color:#2f4bff; box-shadow: 0 0 0 3px rgba(47,75,255,.12); }
+    .name { font-weight:900; }
+    .meta { color:#666; font-size:0.75rem; }
+
+    .result { border-radius:16px; padding:16px; background:#f9fbff; border:1px solid #e7ecff; }
+    .grid2 { display:grid; grid-template-columns: 1fr; gap: var(--gap); }
+    .vizWrap { display:grid; gap:12px; }
+    .radarCard { border: 1px solid #e7ecff; border-radius: 14px; padding: 12px; background:#fff; }
+    .badgeRow { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .badge { border:1px solid #e7ecff; background:#fff; padding:8px 10px; border-radius:999px; font-size:0.8rem; }
+    .badge b { font-weight:900; }
+
+    .legend { display:grid; gap:8px; margin-top:10px; }
+    .legendItem { display:flex; justify-content:space-between; gap:10px; padding:10px 12px; background:#fff; border:1px solid #e7ecff; border-radius:12px; }
+    .chip { display:inline-flex; align-items:center; gap:8px; font-weight:900; }
+    .scoreNum { color:#444; font-size:0.8rem; }
+
+    .chartBox { width:100%; max-width: 420px; margin-left:auto; margin-right:auto; display:flex; justify-content:center; }
+    canvas { width:100%; height:auto; aspect-ratio: 1 / 1; display:block; margin:0 auto; }
+
+    .field { display:grid; gap:6px; margin-top: 10px; }
+    input[type="text"], textarea {
+      width:100%; border:1px solid #e8e8ef; border-radius:12px; padding:10px 12px; font-size:0.85rem;
+      background:#fff;
+    }
+    textarea{ min-height: 110px; resize: vertical; }
+
+    .pill { display:inline-flex; padding:6px 10px; border-radius:999px; background:#fff; border:1px solid #e7ecff; font-size:0.8rem; }
+    .hidden { display:none; }
+
+    @media print{
+      .btns, .layout > .card:first-child { display:none !important; }
+      body{ background:#fff; }
+      .card{ box-shadow:none; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Teaching Persona 後台｜受測者資料</h1>
-      <p class="muted">資料存放在本機瀏覽器的 <b>localStorage</b>（同一台裝置、同一個瀏覽器才看得到）。同名會自動覆蓋最新結果。</p>
-      <div class="row" style="margin-top:10px;">
-        <button class="primary" id="btnReload">重新整理列表</button>
+      <h1>Teaching Persona 後台（預覽/編輯）</h1>
+      <p class="muted">
+        這頁會讀取同一個瀏覽器的 <span class="pill">localStorage</span>（由前台測驗寫入）。
+        <br/>你可以：查看列表、用前台同款圖像預覽、編輯名字/備註、匯出/匯入資料。
+      </p>
+      <div class="btns">
+        <button class="primary" id="btnRefresh">重新整理列表</button>
         <button class="ghost" id="btnExport">匯出 JSON</button>
-        <button class="ghost" id="btnImport">匯入 JSON（覆蓋）</button>
-        <button class="danger" id="btnClearAll">清空全部</button>
-        <input id="search" type="text" placeholder="搜尋名字…" style="flex:1 1 220px; min-width:180px;" />
+        <button class="ghost" id="btnImport">匯入 JSON</button>
+        <button class="ghost" id="btnPrint">列印 / 存成 PDF</button>
+        <button class="danger" id="btnClearAll" title="清空所有受測者資料（不可復原）">清空全部</button>
       </div>
-      <input id="fileInput" type="file" accept="application/json" class="hidden" />
+      <input class="hidden" id="fileInput" type="file" accept="application/json" />
     </div>
 
-    <div class="card" style="margin-top:16px;">
-      <h2>受測者列表</h2>
-      <div class="muted">點「預覽/編輯」可查看與修改；修改後會直接寫回本機資料。</div>
-      <div style="overflow:auto; margin-top:10px;">
-        <table class="table" id="tbl">
-          <thead>
-            <tr>
-              <th style="width: 22%;">姓名</th>
-              <th style="width: 22%;">更新時間</th>
-              <th>最高傾向</th>
-              <th style="width: 20%;">操作</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
+    <div class="layout">
+      <div class="card">
+        <h2>受測者列表</h2>
+        <div class="field">
+          <input id="search" type="text" placeholder="搜尋名字…" />
+        </div>
+        <div class="muted" id="count" style="margin-top:8px;"></div>
+        <div class="list" id="list" style="margin-top: 10px;"></div>
       </div>
-      <div class="footer">若你要跨裝置集中管理，建議之後把資料改存到 Google Sheet / Airtable / DB（這版先用本機後台方便你測流程）。</div>
-    </div>
 
-    <div class="card" style="margin-top:16px;">
-      <h2>預覽與編輯</h2>
-      <div class="grid2">
-        <div class="box">
-          <div class="row">
-            <input id="editName" type="text" placeholder="姓名" style="flex:1 1 200px; min-width:180px;" />
-            <span class="pill" id="editUpdated">未選取</span>
-          </div>
+      <div class="card">
+        <h2>預覽（跟前台同款）</h2>
 
-          <div style="margin-top:10px;">
-            <div class="small"><b>答案（每題一個 A/B/C/D；逗號或換行皆可）</b></div>
-            <textarea id="editAnswers" placeholder="例如：A,B,C,D,...（共 15 題）"></textarea>
-            <div class="muted" id="ansHint"></div>
-          </div>
-
-          <div style="margin-top:10px;">
-            <div class="small"><b>分數（由答案自動計算；也會顯示百分比）</b></div>
-            <div id="editScores" class="small"></div>
-          </div>
-
-          <div class="row" style="margin-top:12px;">
-            <button class="primary" id="btnSave" disabled>儲存修改</button>
-            <button class="ghost" id="btnRecalc" disabled>重新計算分數</button>
-            <button class="danger" id="btnDelete" disabled>刪除此人</button>
-          </div>
-          <div class="muted" id="editMsg" style="margin-top:8px;"></div>
+        <div id="emptyState" class="result">
+          <b>請從左側選一位受測者</b>
+          <p class="muted" style="margin-top:6px;">選取後會顯示：結果摘要、雷達圖、圓餅圖、深入解讀、備課指引與可直接複製給受測者的摘要。</p>
         </div>
 
-        <div class="box">
-          <div class="small"><b>結果摘要預覽</b></div>
-          <div id="preview" style="margin-top:8px;"></div>
-          <div style="margin-top:10px;">
-            <div class="small"><b>原始 JSON</b></div>
-            <pre id="raw" style="white-space:pre-wrap; word-break:break-word; margin:8px 0 0; font-size:0.8rem;"></pre>
+        <div id="detail" class="hidden">
+          <div class="btns" style="margin-top:0;">
+            <button class="primary" id="btnSave">儲存修改</button>
+            <button class="ghost" id="btnCopyText">複製給受測者（文字版）</button>
+            <button class="ghost" id="btnCopyLinkHint" title="本工具使用 localStorage；如需跨裝置分享，建議匯出 JSON 或另做分享頁">分享提示</button>
+            <button class="danger" id="btnDelete">刪除這筆</button>
+          </div>
+
+          <div class="result" style="margin-top: 12px;">
+            <div class="small muted" id="whoLine" style="margin:0 0 6px;"></div>
+            <div id="resultSummary"></div>
+          </div>
+
+          <div class="grid2" style="margin-top: 14px;">
+            <div class="result">
+              <h3>分數分佈（雷達圖）</h3>
+              <div class="muted">用雷達圖看「平衡 vs 偏重」，更直覺。</div>
+              <div class="vizWrap" style="margin-top:10px;">
+                <div class="radarCard">
+                  <div class="chartBox"><canvas id="radar" width="320" height="320" aria-label="分數雷達圖"></canvas></div>
+                  <div class="badgeRow" id="patternBadges"></div>
+                </div>
+
+                <div>
+                  <h3 style="margin:0 0 8px;">分數分佈圓餅圖</h3>
+                  <div class="small muted">以百分比顯示四個向度的相對比例。</div>
+                  <div style="margin-top:10px;">
+                    <div class="chartBox"><canvas id="scorePie" width="320" height="320" aria-label="分數圓餅圖"></canvas></div>
+                    <div class="legend" id="scoreLegend" style="margin-top:10px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="result">
+              <h3>更深入的解讀</h3>
+              <div id="deepAnalysis"></div>
+            </div>
+          </div>
+
+          <div class="result" style="margin-top: 14px;">
+            <h3>依主要向度，備課建議</h3>
+            <div id="prepGuidesContent"></div>
+          </div>
+
+          <div class="result" style="margin-top: 14px;">
+            <h3>最佳自我訓練方式</h3>
+            <div id="trainingPlan"></div>
+          </div>
+
+          <div class="result" style="margin-top: 14px;">
+            <h3>把課做成「像一場 show / 電影」的建議</h3>
+            <div id="movieTips"></div>
+          </div>
+
+          <div class="result" style="margin-top: 14px;">
+            <h3>編輯欄（方便你整理給受測者）</h3>
+            <div class="field">
+              <div class="small muted">名字（同名會覆蓋；在後台改名會變成「新名字」一筆，舊名字那筆會被移除）</div>
+              <input id="editName" type="text" />
+            </div>
+            <div class="field">
+              <div class="small muted">備註（你給受測者的個別回饋、課程安排、follow-up）</div>
+              <textarea id="editNotes" placeholder="例如：下次試講先把開場 Hook 做成 30 秒，並加一個普通→更好對照 demo。"></textarea>
+            </div>
+            <div class="field">
+              <div class="small muted">最後更新</div>
+              <div class="pill" id="editUpdatedAt"></div>
+            </div>
+          </div>
+
+          <div class="muted" style="margin-top:10px;">
+            提醒：後台呈現是「即時計算」，不會改動你的題目與評分邏輯；只有名字/備註會被你手動修改。
           </div>
         </div>
       </div>
@@ -136,274 +198,804 @@
   function saveRecords(obj){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }catch(e){}
   }
-
-  // Scoring must match quiz: 2 points per answered choice
-  function scoreAnswers(answers){
-    const s = {A:0,B:0,C:0,D:0};
-    answers.forEach(a => { if(a && s[a] !== undefined) s[a] += 2; });
-    return s;
+  function download(filename, text){
+    const blob = new Blob([text], {type:"application/json;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 50);
   }
-  function parseAnswers(text){
-    if(!text) return [];
-    const parts = text.split(/[\s,，]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
-    return parts;
-  }
-  function fmtISO(iso){
-    try{
-      const d = new Date(iso);
-      if(isNaN(d.getTime())) return iso || "";
-      return d.toLocaleString("zh-Hant", { hour12:false });
-    }catch(e){ return iso || ""; }
-  }
-  function topFromRecord(rec){
-    if(rec && rec.ranked && rec.ranked[0]) return rec.ranked[0].title || rec.ranked[0].key || "";
-    if(rec && rec.summaryText && rec.summaryText.top) return rec.summaryText.top;
-    return "";
+  function fmtTime(iso){
+    if(!iso) return "";
+    try{ return new Date(iso).toLocaleString("zh-TW"); }catch(e){ return iso; }
   }
 
-  const tbody = document.getElementById("tbody");
-  const search = document.getElementById("search");
+  const PROFILES = {
+    A: { key:"A", title:"結構/節奏導向",
+      oneLiner:"你很重視課程的節奏、段落與轉場，擅長把複雜內容拆成可跟做的步驟。",
+      strengths:["節奏掌控佳","結構清晰","能把複雜變成步驟"],
+      risks:["容易過度腳本化","臨場彈性不足時會卡住"],
+      bestTraining:[
+        "用「分鏡表」備課：開場 → 任務 → 卡點 → 轉折 → 收束",
+        "每次試講只練一件事：開場/轉折/收尾其中一個鏡頭",
+        "做 10 分鐘版本：逼自己抓出核心節奏"
+      ],
+      movieTips:[
+        "把整堂課當成分鏡：每段只回答一個問題（這段要讓學員『感覺到』什麼？）。",
+        "每 10–12 分鐘必須有一次「動起來」（練習/投票/兩兩交換），避免變成講座。",
+        "寫下 3 個轉場句：『現在你已經…接下來我們要…』，讓節奏自然推進。"
+      ]
+    },
+    B: { key:"B", title:"舞台/互動導向",
+      oneLiner:"你擅長用能量與互動讓學員投入，能把內容做得「很好看、很好玩」。",
+      strengths:["氣氛與帶場強","互動自然","讓課『很好看』"],
+      risks:["容易漂移主線","內容落地度不足會空"],
+      bestTraining:[
+        "每段設計一個「可視覺化的輸出」：一句話/一張圖/一個小作品",
+        "練 3 種互動節奏：提問、投票、兩兩交換",
+        "為每段加「錨點句」：說完這句就回主線"
+      ],
+      movieTips:[
+        "每段互動後一定要有「落地物」：一句話總結 / 一張圖 / 一個小作品截圖。",
+        "為每段準備一個「主線錨點句」，嗨完立即回主題，避免漂移。",
+        "設計一個「高潮 demo」：從普通→更好，讓學員看到變化。"
+      ]
+    },
+    C: { key:"C", title:"陪跑/回饋導向",
+      oneLiner:"你善於提問與回饋，能抓到學員卡點，讓學員在實作中快速進步。",
+      strengths:["陪跑與回饋強","能抓到學員卡點","學員成長感高"],
+      risks:["節奏可能慢","若目標不清易變聊天"],
+      bestTraining:[
+        "備一套「黃金三問」：你現在卡在哪？你試過什麼？下一步你要做哪個最小動作？",
+        "把回饋標準化：優點一句 + 建議一句 + 下一步一句",
+        "設定時間盒：每輪討論 4 分鐘必須收斂到行動"
+      ],
+      movieTips:[
+        "把體驗回路做滿：做→卡→解→再做（至少兩輪），學員才有成就感。",
+        "設時間盒：討論再精彩也要收斂到「下一步最小動作」。",
+        "用標準化回饋句式：優點一句 + 建議一句 + 下一步一句。"
+      ]
+    },
+    D: { key:"D", title:"案例/觀點導向",
+      oneLiner:"你用案例與觀點建立說服力，擅長提供判準，讓學員「看見差距」。",
+      strengths:["案例與洞察強","觀點鮮明","容易建立信任"],
+      risks:["容易資訊量過載","若沒體驗環會變成講座"],
+      bestTraining:[
+        "每個案例只留 1 個訊息：我想你記得什麼？",
+        "用「對照策展」：好 vs 更好，並說出判準",
+        "每 10 分鐘插入一個小練習：立刻套用到學員作品/題目"
+      ],
+      movieTips:[
+        "每個案例只留一個訊息：你希望學員記得的判準是什麼？",
+        "用「對照策展」：好 vs 更好，並說清楚差別（用 3 點判準就好）。",
+        "每 10 分鐘插一個小練習：讓學員把判準套到自己的作品/題目。"
+      ]
+    }
+  };
 
+  const PREP_GUIDES = {
+    A: { title:"結構／節奏向度｜以流程與段落為主引擎",
+      bullets:[
+        "先畫節奏，不先寫內容：把課拆成 4–6 段，每段只回答一個問題。",
+        "為每段準備轉場句，幫助學員跟上進度。",
+        "把收尾當成一段來備：一句總結＋一個行動指令。"
+      ],
+      tip:"清楚比豐富更重要，避免一段想做太多事。"
+    },
+    B: { title:"舞台／互動向度｜以能量與投入感為主引擎",
+      bullets:[
+        "每段互動都要有落地物：一句話、一個判準或一個小步驟。",
+        "先寫一條主線句，課中重複 3–5 次。",
+        "設計一個高潮示範（普通→更好 或 錯→對）。"
+      ],
+      tip:"熱鬧之後要收斂，學員才帶得走。"
+    },
+    C: { title:"陪跑／回饋向度｜以看人與修正為主引擎",
+      bullets:[
+        "固定一套回饋句型：看到什麼＋建議什麼＋下一步。",
+        "練習一定兩輪：做 → 回饋 → 再做。",
+        "討論一定有出口，最後收斂成可行動的下一步。"
+      ],
+      tip:"結構不是限制，而是幫你省力。"
+    },
+    D: { title:"案例／觀點向度｜以判準與眼界為主引擎",
+      bullets:[
+        "每個案例只服務一個觀點，說清楚要看懂的差異。",
+        "案例成對出現：好 vs 更好、錯誤 vs 修正。",
+        "每 10 分鐘就套用一次，哪怕只是在腦中判斷。"
+      ],
+      tip:"沒有套用，案例就只是欣賞。"
+    }
+  };
+
+  const axisLabel = { A:"結構／節奏", B:"舞台／互動", C:"陪跑／回饋", D:"案例／觀點" };
+
+  function rankProfiles(scores){
+    return Object.entries(scores)
+      .sort((a,b)=> (b[1]||0) - (a[1]||0))
+      .map(([k,v]) => ({ key:k, score:v||0, ...PROFILES[k] }));
+  }
+
+  function buildSummary(sorted){
+    const top1 = sorted[0], top2 = sorted[1];
+    const isHybrid = top2 && (top2.score >= top1.score - 2);
+    const headline = isHybrid
+      ? `你呈現兩個很接近的傾向：<b>${top1.title}</b> × <b>${top2.title}</b>。`
+      : `你最明顯的傾向是：<b>${top1.title}</b>。`;
+
+    return `
+      <p style="margin:0 0 8px;"><b>${headline}</b></p>
+      <p class="small" style="margin:0;">${top1.oneLiner}</p>
+
+      <h3 style="margin-top:12px;">你最可能的優勢</h3>
+      <ul style="margin:0 0 0 18px;">${top1.strengths.map(s=>`<li>${s}</li>`).join("")}</ul>
+
+      <h3 style="margin-top:12px;">你要小心的盲點</h3>
+      <ul style="margin:0 0 0 18px;">${top1.risks.map(s=>`<li>${s}</li>`).join("")}</ul>
+    `;
+  }
+
+  function buildTraining(sorted){
+    const top1 = sorted[0], top2 = sorted[1];
+    const isHybrid = top2 && (top2.score >= top1.score - 2);
+    const focus = isHybrid ? [top1, top2] : [top1];
+
+    const blocks = focus.map(p => `
+      <div style="margin-bottom:12px;">
+        <div style="font-weight:900; margin-bottom:6px;">${p.title}｜訓練法（最適配）</div>
+        <ol style="margin:0 0 0 18px;">
+          ${p.bestTraining.map(s=>`<li>${s}</li>`).join("")}
+        </ol>
+      </div>
+    `).join("");
+
+    const weekly = `
+      <div style="border-top:1px solid #e7ecff; padding-top:10px;">
+        <div style="font-weight:900; margin-bottom:6px;">一週 2 次、每次 20 分鐘的最小訓練菜單</div>
+        <ol style="margin:0 0 0 18px;">
+          <li>挑一個「鏡頭」練：開場 / 轉折 / 收尾（三選一）。</li>
+          <li>錄音或錄影 5 分鐘試講，回看只檢查一件事（只改一個小動作）。</li>
+          <li>下一次只改一個小動作（例如：加一句錨點句、縮短講述 30 秒、把練習改成 2 步）。</li>
+        </ol>
+      </div>
+    `;
+    return blocks + weekly;
+  }
+
+  function buildMovieTips(sorted, scores){
+    const top = sorted[0].key;
+    const second = sorted[1].key;
+    const isHybrid = scores[second] >= scores[top] - 2;
+
+    const list = arr => `<ul style="margin:0 0 0 18px;">${arr.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+
+    return `
+      <p class="small" style="margin:0 0 10px;">
+        你可以用「SHOW 型備課公式」：<b>開場吸睛 → 體驗練習×2 → 觀點整理 → 帶走的作品/清單</b>
+      </p>
+      <div style="display:grid; gap:12px;">
+        <div>
+          <div style="font-weight:900; margin-bottom:6px;">主力傾向的電影化技巧</div>
+          ${list(PROFILES[top].movieTips)}
+        </div>
+        <div>
+          <div style="font-weight:900; margin-bottom:6px;">想更完整（補強另一邊）</div>
+          ${ isHybrid ? list(PROFILES[second].movieTips) : list(PROFILES[second].movieTips) }
+        </div>
+      </div>
+    `;
+  }
+
+  function analyzePattern(scores, max){
+    const vals = Object.values(scores);
+    const keys = Object.keys(scores);
+    const sortedVals = [...vals].sort((a,b)=>a-b);
+    const min = sortedVals[0], maxv = sortedVals[sortedVals.length-1];
+    const range = maxv - min;
+
+    const mean = vals.reduce((a,b)=>a+b,0)/vals.length;
+    const variance = vals.reduce((acc,v)=>acc+(v-mean)*(v-mean),0)/vals.length;
+    const std = Math.sqrt(variance);
+
+    const NEAR_ALL = 2;
+    const NEAR_PAIR = 2;
+    const EXTREME_HIGH = max - 4;
+    const EXTREME_LOW = 2;
+
+    const badges = [];
+    const notes = [];
+
+    if (range <= NEAR_ALL){
+      badges.push({text:"平衡型輪廓", why:"四個分數差距很小"});
+      notes.push(`
+        <p class="small"><b>四個分數很接近，通常代表：</b></p>
+        <ul style="margin:0 0 0 18px;">
+          <li>你有多種教學手段，但可能還沒有固定的「主力打法」（或情境不同你會切換）。</li>
+          <li>優點是彈性高；挑戰是備課容易想做很多但不好收斂。</li>
+          <li>建議：先選一個你最想建立辨識度的方向，做 2 週刻意練習，讓它成為招牌。</li>
+        </ul>
+      `);
+    }
+
+    const sortedPairs = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+    const top = sortedPairs[0], second = sortedPairs[1];
+    if ((top[1]-second[1]) <= NEAR_PAIR && range > NEAR_ALL){
+      badges.push({text:"雙主力輪廓", why:"前兩名非常接近"});
+      notes.push(`
+        <p class="small"><b>前兩名很接近，通常代表：</b></p>
+        <ul style="margin:0 0 0 18px;">
+          <li>你有兩個很強的教學引擎，能組成一套更完整的教法。</li>
+          <li>建議：把它寫成固定公式：先用其中一個做帶入，再用另一個做落地與收束。</li>
+        </ul>
+      `);
+    }
+
+    const extremeHigh = keys.filter(k => scores[k] >= EXTREME_HIGH);
+    const extremeLow  = keys.filter(k => scores[k] <= EXTREME_LOW);
+
+    if (extremeHigh.length){
+      badges.push({text:"高度偏重輪廓", why:"有一個方向非常突出"});
+      notes.push(`
+        <p class="small"><b>有一個分數非常高，通常代表：</b></p>
+        <ul style="margin:0 0 0 18px;">
+          <li>你已經有明顯招牌與辨識度。</li>
+          <li>建議：挑一個最弱項做最小補強（用模板補），避免整堂課只靠同一招。</li>
+        </ul>
+      `);
+    }
+
+    if (extremeLow.length){
+      badges.push({text:"盲區提醒", why:"至少有一個方向很少被使用"});
+      notes.push(`
+        <p class="small"><b>有一個分數非常低，通常代表：</b></p>
+        <ul style="margin:0 0 0 18px;">
+          <li>那個方向不是你的自然肌肉（或目前很少用到）。</li>
+          <li>不代表你不行；只代表你用「工具化模板」補會最有效。</li>
+        </ul>
+      `);
+    }
+
+    if (!notes.length){
+      badges.push({text:"一般輪廓", why:"有主力、也有可補強處"});
+      notes.push(`
+        <p class="small"><b>你的分數輪廓顯示你有主力傾向，也保留一定彈性。</b></p>
+        <ul style="margin:0 0 0 18px;">
+          <li>建議：把主力做成招牌段落，再挑一個弱項做模板化補強。</li>
+        </ul>
+      `);
+    }
+
+    const stability =
+      std <= 1.5 ? "穩定（差距小）" :
+      std <= 3.5 ? "有主力（差距中）" :
+      "聚焦（差距大）";
+
+    const metricBlock = `
+      <div class="result" style="background:#fff; margin:10px 0 0; border:1px dashed #e7ecff;">
+        <div class="small"><b>分數分佈小提示</b></div>
+        <div class="small">最高與最低相差 <b>${range}</b> 分：差距越小表示越平均；差距越大表示強項更聚焦。</div>
+        <div class="small">整體狀態：<b>${stability}</b></div>
+      </div>
+    `;
+
+    return { badges, html: notes.join("") + metricBlock };
+  }
+
+  function renderPrepGuides(sorted){
+    const top1 = sorted[0];
+    const top2 = sorted[1];
+    const isHybrid = top2 && (top2.score >= top1.score - 2);
+    const keys = isHybrid ? [top1.key, top2.key] : [top1.key];
+
+    return keys.map(k=>{
+      const g = PREP_GUIDES[k];
+      return `
+        <div style="margin-bottom:12px;">
+          <div style="font-weight:900; margin-bottom:6px;">${g.title}</div>
+          <ul style="margin:0 0 6px 18px;">
+            ${g.bullets.map(b=>`<li>${b}</li>`).join("")}
+          </ul>
+          <div class="small">提醒：${g.tip}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function drawRadar(scores, maxScore){
+    const canvas = document.getElementById("radar");
+    if(!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    const rectW = Math.floor((canvas.parentElement && canvas.parentElement.clientWidth) ? canvas.parentElement.clientWidth : (canvas.getBoundingClientRect().width || 320));
+    const cssSize = Math.max(180, Math.min(440, rectW));
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width  = Math.round(cssSize * dpr);
+    canvas.height = Math.round(cssSize * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0,0,cssSize,cssSize);
+
+    const cx = cssSize/2, cy = cssSize/2;
+    const R = cssSize * 0.33;
+    const LABEL_R = Math.min(cssSize/2 - 14, R + 24);
+
+    const keys = ["A","B","C","D"];
+    const rings = 6;
+
+    function ang(i){ return (-Math.PI/2) + (i * (Math.PI*2/keys.length)); }
+
+    ctx.lineWidth = 1;
+    for (let ring=1; ring<=rings; ring++){
+      const rr = (R * ring) / rings;
+      ctx.beginPath();
+      for (let i=0;i<keys.length;i++){
+        const a = ang(i);
+        const x = cx + rr * Math.cos(a);
+        const y = cy + rr * Math.sin(a);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+      const alpha = (ring % 2 === 0) ? 0.12 : 0.08;
+      ctx.strokeStyle = "rgba(0,0,0,"+alpha+")";
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = "rgba(0,0,0,0.14)";
+    for (let i=0;i<keys.length;i++){
+      const a = ang(i);
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.lineTo(cx + R*Math.cos(a), cy + R*Math.sin(a));
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "rgba(0,0,0,0.08)";
+    for (let i=0;i<keys.length;i++){
+      const a = ang(i);
+      for (let t=1; t<rings; t++){
+        const rr = (R*t)/rings;
+        const x = cx + rr*Math.cos(a);
+        const y = cy + rr*Math.sin(a);
+        ctx.beginPath(); ctx.arc(x,y,1.4,0,Math.PI*2); ctx.fill();
+      }
+    }
+
+    ctx.beginPath();
+    for (let i=0;i<keys.length;i++){
+      const k = keys[i];
+      const v = Math.max(0, Math.min(maxScore, scores[k]||0));
+      const rr = (v / maxScore) * R;
+      const a = ang(i);
+      const x = cx + rr*Math.cos(a);
+      const y = cy + rr*Math.sin(a);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = "rgba(47,75,255,0.14)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(47,75,255,0.75)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    for (let i=0;i<keys.length;i++){
+      const k = keys[i];
+      const v = Math.max(0, Math.min(maxScore, scores[k]||0));
+      const rr = (v / maxScore) * R;
+      const a = ang(i);
+      const x = cx + rr*Math.cos(a);
+      const y = cy + rr*Math.sin(a);
+      ctx.beginPath(); ctx.arc(x,y,3.2,0,Math.PI*2);
+      ctx.fillStyle = "rgba(47,75,255,0.95)";
+      ctx.fill();
+    }
+
+    ctx.fillStyle = "rgba(0,0,0,0.82)";
+    ctx.font = "14px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial";
+    for (let i=0;i<keys.length;i++){
+      const k = keys[i];
+      const a = ang(i);
+      let tx = cx + LABEL_R*Math.cos(a);
+      let ty = cy + LABEL_R*Math.sin(a);
+      const text = axisLabel[k];
+      const w = ctx.measureText(text).width;
+
+      if (Math.cos(a) < -0.15) tx -= w;
+      else if (Math.abs(Math.cos(a)) <= 0.15) tx -= w/2;
+
+      ty += 5;
+
+      const pad = 10;
+      tx = Math.max(pad, Math.min(cssSize - pad - w, tx));
+      ty = Math.max(pad + 12, Math.min(cssSize - pad, ty));
+
+      ctx.fillText(text, tx, ty);
+    }
+  }
+
+  function drawPie(scores, maxScore){
+    const canvas = document.getElementById("scorePie");
+    if(!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    const rectW = Math.floor((canvas.parentElement && canvas.parentElement.clientWidth) ? canvas.parentElement.clientWidth : (canvas.getBoundingClientRect().width || 320));
+    const cssSize = Math.max(180, Math.min(360, rectW));
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = Math.round(cssSize*dpr);
+    canvas.height= Math.round(cssSize*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,cssSize,cssSize);
+
+    const order = ["A","B","C","D"];
+    const entries = order.map(k=>[k, scores[k]||0]).sort((a,b)=>b[1]-a[1]);
+    const total = entries.reduce((acc,it)=>acc+it[1],0) || 1;
+
+    const cx = cssSize/2, cy=cssSize/2;
+    const R = cssSize*0.36;
+    const r0 = R*0.52;
+    const lineR = cssSize*0.41;
+    const labelR = cssSize*0.49;
+    const alphas=[0.85,0.65,0.45,0.25];
+
+    let startAng = -Math.PI/2;
+    const mids=[];
+
+    for(let i=0;i<entries.length;i++){
+      const k=entries[i][0], v=entries[i][1];
+      const frac = v/total;
+      const endAng = startAng + frac*Math.PI*2;
+
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,R,startAng,endAng);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(47,75,255,"+(alphas[i]||0.25)+")";
+      ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,0.95)";
+      ctx.lineWidth=2;
+      ctx.stroke();
+
+      mids.push({k,v,mid:(startAng+endAng)/2});
+      startAng=endAng;
+    }
+
+    ctx.beginPath(); ctx.arc(cx,cy,r0,0,Math.PI*2);
+    ctx.fillStyle="rgba(255,255,255,0.92)";
+    ctx.fill();
+    ctx.strokeStyle="rgba(0,0,0,0.06)";
+    ctx.lineWidth=1; ctx.stroke();
+
+    ctx.font = "14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Arial";
+    ctx.strokeStyle="rgba(0,0,0,0.25)";
+    ctx.lineWidth=1;
+
+    const pad=12, minGap=18;
+    let points = mids.map(p=>{
+      const pct = Math.round((p.v / maxScore) * 100);
+      const text = axisLabel[p.k] + " " + pct + "%";
+      const x = cx + labelR*Math.cos(p.mid);
+      const y = cy + labelR*Math.sin(p.mid);
+      const side = (Math.cos(p.mid) >= 0) ? "R" : "L";
+      return { ...p, pct, text, x, y, side };
+    });
+
+    function adjust(list){
+      list.sort((a,b)=>a.y-b.y);
+      for(let j=1;j<list.length;j++){
+        if(list[j].y - list[j-1].y < minGap) list[j].y = list[j-1].y + minGap;
+      }
+      for(let j=0;j<list.length;j++){
+        list[j].y = Math.max(pad, Math.min(cssSize - pad, list[j].y));
+      }
+      return list;
+    }
+
+    const left = adjust(points.filter(p=>p.side==="L"));
+    const right= adjust(points.filter(p=>p.side==="R"));
+    points = left.concat(right);
+
+    for(const p of points){
+      const w = ctx.measureText(p.text).width;
+      let tx = (p.side==="R") ? p.x : (p.x - w);
+      tx = Math.min(cssSize - pad - w, Math.max(pad, tx));
+      const ty = p.y + 5;
+
+      const boxX = tx - 5;
+      const boxY = ty - 14;
+      const boxW = w + 10;
+      const boxH = 18;
+
+      const x1 = cx + R*Math.cos(p.mid);
+      const y1 = cy + R*Math.sin(p.mid);
+      const x2 = cx + lineR*Math.cos(p.mid);
+      const y2 = cy + lineR*Math.sin(p.mid);
+      const x3 = (p.side==="R") ? boxX : (boxX + boxW);
+      const y3 = boxY + boxH/2;
+
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x2,y2);
+      ctx.lineTo(x3,y3);
+      ctx.stroke();
+
+      ctx.fillStyle="rgba(255,255,255,0.96)";
+      ctx.fillRect(boxX,boxY,boxW,boxH);
+
+      ctx.fillStyle="rgba(0,0,0,0.88)";
+      ctx.fillText(p.text, tx, ty);
+    }
+  }
+
+  function renderLegend(scores, maxScore){
+    const el = document.getElementById("scoreLegend");
+    const ranked = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+    el.innerHTML = ranked.map(([k,v])=>{
+      const pct = Math.round((v / maxScore) * 100);
+      return `
+        <div class="legendItem">
+          <div class="chip">${PROFILES[k].title}</div>
+          <div class="scoreNum">${pct}%</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderBadges(badges){
+    const el = document.getElementById("patternBadges");
+    el.innerHTML = badges.map(b=>`<span class="badge"><b>${b.text}</b>｜${b.why}</span>`).join("");
+  }
+
+  // UI state
+  const listEl = document.getElementById("list");
+  const countEl = document.getElementById("count");
+  const searchEl = document.getElementById("search");
+
+  const emptyState = document.getElementById("emptyState");
+  const detail = document.getElementById("detail");
+
+  const whoLine = document.getElementById("whoLine");
   const editName = document.getElementById("editName");
-  const editUpdated = document.getElementById("editUpdated");
-  const editAnswers = document.getElementById("editAnswers");
-  const editScores = document.getElementById("editScores");
-  const preview = document.getElementById("preview");
-  const raw = document.getElementById("raw");
-  const ansHint = document.getElementById("ansHint");
-  const editMsg = document.getElementById("editMsg");
+  const editNotes = document.getElementById("editNotes");
+  const editUpdatedAt = document.getElementById("editUpdatedAt");
 
-  const btnReload = document.getElementById("btnReload");
+  const btnRefresh = document.getElementById("btnRefresh");
   const btnExport = document.getElementById("btnExport");
   const btnImport = document.getElementById("btnImport");
+  const btnPrint = document.getElementById("btnPrint");
   const btnClearAll = document.getElementById("btnClearAll");
-
   const btnSave = document.getElementById("btnSave");
-  const btnRecalc = document.getElementById("btnRecalc");
+  const btnCopyText = document.getElementById("btnCopyText");
+  const btnCopyLinkHint = document.getElementById("btnCopyLinkHint");
   const btnDelete = document.getElementById("btnDelete");
   const fileInput = document.getElementById("fileInput");
 
-  let currentKey = null; // original name key in storage
+  let currentKey = null;
+  let currentRecords = {};
 
-  function renderList(){
-    const q = (search.value || "").trim().toLowerCase();
-    const records = loadRecords();
-    const rows = Object.values(records)
-      .filter(r => !q || (r.name || "").toLowerCase().includes(q))
-      .sort((a,b) => (b.updatedAt||"").localeCompare(a.updatedAt||""));
+  function getMaxScoreFromRecord(rec){
+    const n = Array.isArray(rec.answers) ? rec.answers.length : 15;
+    return n * 2;
+  }
 
-    tbody.innerHTML = rows.map(r => {
-      const name = r.name || "";
-      const updated = fmtISO(r.updatedAt);
-      const top = topFromRecord(r);
+  function sanitize(s){
+    return (s||"").toString().replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function refreshList(){
+    currentRecords = loadRecords();
+    const keys = Object.keys(currentRecords);
+    const q = (searchEl.value || "").trim().toLowerCase();
+
+    const rows = keys
+      .filter(name => !q || name.toLowerCase().includes(q))
+      .map(name => ({ name, ...currentRecords[name] }))
+      .sort((a,b)=> (b.updatedAt||"").localeCompare(a.updatedAt||""));
+
+    countEl.textContent = `共 ${keys.length} 筆（目前顯示 ${rows.length} 筆）`;
+
+    listEl.innerHTML = rows.map(r=>{
+      const active = (r.name === currentKey) ? "active" : "";
+      const updated = fmtTime(r.updatedAt);
+      const top1 = r.top1 && r.top1.title ? r.top1.title : "—";
       return `
-        <tr>
-          <td><b>${escapeHtml(name)}</b></td>
-          <td><span class="pill">${escapeHtml(updated)}</span></td>
-          <td>${escapeHtml(top)}</td>
-          <td>
-            <button class="ghost" data-act="open" data-name="${escapeAttr(name)}">預覽/編輯</button>
-          </td>
-        </tr>
+        <div class="row ${active}" data-name="${sanitize(r.name)}">
+          <div style="min-width:0;">
+            <div class="name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sanitize(r.name)}</div>
+            <div class="meta" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sanitize(top1)} · ${sanitize(updated)}</div>
+          </div>
+          <div class="pill">查看</div>
+        </div>
       `;
-    }).join("") || `<tr><td colspan="4" class="muted">目前沒有資料（請先在測驗頁完成測驗）。</td></tr>`;
+    }).join("");
 
-    // bind
-    tbody.querySelectorAll('button[data-act="open"]').forEach(btn => {
-      btn.addEventListener("click", () => openRecord(btn.getAttribute("data-name")));
+    listEl.querySelectorAll(".row").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const name = el.getAttribute("data-name");
+        openDetail(name);
+      });
     });
-  }
 
-  function openRecord(name){
-    const records = loadRecords();
-    const rec = records[name];
-    if(!rec){ return; }
-    currentKey = name;
-
-    editName.value = rec.name || name;
-    editUpdated.textContent = rec.updatedAt ? ("更新：" + fmtISO(rec.updatedAt)) : "未選取";
-
-    const answers = Array.isArray(rec.answers) ? rec.answers : [];
-    editAnswers.value = answers.join(",");
-
-    updateComputedPanels();
-
-    raw.textContent = JSON.stringify(rec, null, 2);
-    preview.innerHTML = buildPreview(rec);
-
-    btnSave.disabled = false;
-    btnRecalc.disabled = false;
-    btnDelete.disabled = false;
-    editMsg.textContent = "";
-  }
-
-  function updateComputedPanels(){
-    const answers = parseAnswers(editAnswers.value);
-    const s = scoreAnswers(answers);
-    const total = answers.length * 2 || 1;
-    const pct = (k) => Math.round((s[k] / (Math.max(1, answers.length*2))) * 100);
-
-    ansHint.textContent = `目前答案數：${answers.length}（建議與測驗題數一致）`;
-
-    editScores.innerHTML = `
-      A：${s.A} 分（${pct("A")}%）　｜　B：${s.B} 分（${pct("B")}%）<br/>
-      C：${s.C} 分（${pct("C")}%）　｜　D：${s.D} 分（${pct("D")}%）
-    `;
-  }
-
-  function buildPreview(rec){
-    const s = rec.scores || {};
-    const top = topFromRecord(rec);
-    const badges = (rec.summaryText && Array.isArray(rec.summaryText.badges)) ? rec.summaryText.badges : [];
-    return `
-      <div class="small"><b>姓名：</b>${escapeHtml(rec.name || "")}</div>
-      <div class="small" style="margin-top:6px;"><b>最高傾向：</b>${escapeHtml(top)}</div>
-      <div class="small" style="margin-top:6px;">
-        <b>分數：</b>
-        A ${escapeHtml(String(s.A ?? ""))} / B ${escapeHtml(String(s.B ?? ""))} / C ${escapeHtml(String(s.C ?? ""))} / D ${escapeHtml(String(s.D ?? ""))}
-      </div>
-      <div class="small" style="margin-top:6px;"><b>輪廓標記：</b>${badges.length ? escapeHtml(badges.join("、")) : "—"}</div>
-    `;
-  }
-
-  function saveEdits(){
-    const newName = (editName.value || "").trim();
-    if(!newName){ editMsg.textContent = "請先輸入姓名。"; return; }
-
-    const answers = parseAnswers(editAnswers.value);
-    const scores = scoreAnswers(answers);
-
-    const records = loadRecords();
-    const old = records[currentKey];
-    if(!old){ editMsg.textContent = "找不到原資料，請重新整理列表。"; return; }
-
-    const updatedAt = new Date().toISOString();
-    const ranked = ["A","B","C","D"].map(k => ({ key:k, title:k, score:scores[k] }))
-      .sort((a,b)=>b.score-a.score);
-
-    const record = {
-      ...old,
-      name: newName,
-      updatedAt,
-      answers,
-      scores,
-      ranked,
-      summaryText: {
-        top: ranked[0]?.key || "",
-        second: ranked[1]?.key || "",
-        hybrid: (ranked[1] && ranked[1].score >= ranked[0].score - 2) || false,
-        badges: (old.summaryText && old.summaryText.badges) ? old.summaryText.badges : []
-      }
-    };
-
-    // rename key if needed
-    if(newName !== currentKey){
-      delete records[currentKey];
-      currentKey = newName;
+    if (currentKey && !currentRecords[currentKey]){
+      currentKey = null;
+      showEmpty();
     }
-    records[newName] = record;
-    saveRecords(records);
-
-    raw.textContent = JSON.stringify(record, null, 2);
-    preview.innerHTML = buildPreview(record);
-    editUpdated.textContent = "更新：" + fmtISO(updatedAt);
-    editMsg.textContent = "已儲存。";
-    renderList();
   }
 
-  function deleteCurrent(){
-    if(!currentKey) return;
-    if(!confirm("確定要刪除此人的資料嗎？")) return;
-    const records = loadRecords();
-    delete records[currentKey];
-    saveRecords(records);
-
-    currentKey = null;
-    editName.value = "";
-    editUpdated.textContent = "未選取";
-    editAnswers.value = "";
-    editScores.innerHTML = "";
-    preview.innerHTML = "";
-    raw.textContent = "";
-    btnSave.disabled = true;
-    btnRecalc.disabled = true;
-    btnDelete.disabled = true;
-    editMsg.textContent = "已刪除。";
-    renderList();
+  function showEmpty(){
+    emptyState.classList.remove("hidden");
+    detail.classList.add("hidden");
   }
 
-  function exportJSON(){
-    const records = loadRecords();
-    const blob = new Blob([JSON.stringify(records, null, 2)], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "teaching_persona_records.json";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  function openDetail(name){
+    const rec = currentRecords[name];
+    if(!rec){ showEmpty(); return; }
+
+    currentKey = name;
+    refreshList();
+
+    emptyState.classList.add("hidden");
+    detail.classList.remove("hidden");
+
+    const maxScore = getMaxScoreFromRecord(rec);
+    const scores = rec.scores || {A:0,B:0,C:0,D:0};
+    const sorted = rankProfiles(scores);
+
+    whoLine.innerHTML = `<b>受測者：</b>${sanitize(name)}　<span class="pill" style="margin-left:8px;">${sanitize(fmtTime(rec.updatedAt))}</span>`;
+
+    document.getElementById("resultSummary").innerHTML = buildSummary(sorted);
+
+    drawRadar(scores, maxScore);
+    drawPie(scores, maxScore);
+    renderLegend(scores, maxScore);
+
+    const pattern = analyzePattern(scores, maxScore);
+    renderBadges(pattern.badges);
+    document.getElementById("deepAnalysis").innerHTML = pattern.html;
+
+    document.getElementById("prepGuidesContent").innerHTML = renderPrepGuides(sorted);
+    document.getElementById("trainingPlan").innerHTML = buildTraining(sorted);
+    document.getElementById("movieTips").innerHTML = buildMovieTips(sorted, scores);
+
+    editName.value = name;
+    editNotes.value = rec.notes || "";
+    editUpdatedAt.textContent = fmtTime(rec.updatedAt);
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function importJSON(file){
-    const reader = new FileReader();
-    reader.onload = () => {
-      try{
-        const obj = JSON.parse(reader.result);
-        if(!obj || typeof obj !== "object") throw new Error("format");
-        if(!confirm("匯入會覆蓋目前本機資料，確定繼續嗎？")) return;
-        saveRecords(obj);
-        renderList();
-        alert("已匯入。");
-      }catch(e){
-        alert("匯入失敗：檔案格式不是合法 JSON。");
-      }
-    };
-    reader.readAsText(file, "utf-8");
+  async function copyToClipboard(text){
+    try{ await navigator.clipboard.writeText(text); alert("已複製！"); }
+    catch(e){ alert("複製失敗（瀏覽器可能不允許）。"); }
   }
 
-  function clearAll(){
-    if(!confirm("確定要清空全部資料嗎？此動作不可復原。")) return;
-    localStorage.removeItem(STORAGE_KEY);
-    renderList();
-    deleteCurrent(); // resets UI
-  }
+  function buildShareText(name, rec){
+    const scores = rec.scores || {A:0,B:0,C:0,D:0};
+    const sorted = rankProfiles(scores);
+    const top1 = sorted[0], top2 = sorted[1];
+    const hybrid = top2 && (top2.score >= top1.score - 2);
+    const maxScore = getMaxScoreFromRecord(rec);
 
-  function escapeHtml(s){
-    return String(s || "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  }
-  function escapeAttr(s){
-    return String(s || "").replace(/"/g, "&quot;");
+    const pct = k => Math.round(((scores[k]||0) / maxScore) * 100) + "%";
+    const line = k => `${axisLabel[k]}：${pct(k)}`;
+
+    const notes = (rec.notes || "").trim();
+    return `Teaching Persona 測驗結果（受測者：${name}）
+- 主力傾向：${top1.title}
+- 次高傾向：${top2.title}
+- 狀態：${hybrid ? "雙主力/混合" : "主力明顯"}
+- 四向度比例：${line("A")}｜${line("B")}｜${line("C")}｜${line("D")}
+- 一句話：${top1.oneLiner}
+
+給你的下一步（建議）：
+1) ${top1.bestTraining[0]}
+2) ${top1.bestTraining[1]}
+3) ${top1.bestTraining[2]}
+${notes ? `
+講師備註：
+${notes}` : ""}`;
   }
 
   // events
-  btnReload.addEventListener("click", renderList);
-  search.addEventListener("input", renderList);
+  btnRefresh.addEventListener("click", refreshList);
+  searchEl.addEventListener("input", refreshList);
 
-  editAnswers.addEventListener("input", () => {
-    updateComputedPanels();
-    editMsg.textContent = "";
+  btnExport.addEventListener("click", ()=>{
+    const obj = loadRecords();
+    const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");
+    download(`teaching_persona_records_${ts}.json`, JSON.stringify(obj, null, 2));
   });
 
-  btnRecalc.addEventListener("click", () => {
-    updateComputedPanels();
-    editMsg.textContent = "已重新計算分數（尚未儲存）。";
+  btnImport.addEventListener("click", ()=> fileInput.click());
+  fileInput.addEventListener("change", async ()=>{
+    const f = fileInput.files && fileInput.files[0];
+    if(!f) return;
+    try{
+      const text = await f.text();
+      const obj = JSON.parse(text);
+      if(!obj || typeof obj !== "object") throw new Error("invalid");
+      const cur = loadRecords();
+      const merged = { ...cur, ...obj };
+      saveRecords(merged);
+      alert("匯入完成！");
+      refreshList();
+    }catch(e){
+      alert("匯入失敗：請確認是 JSON 檔。");
+    }finally{
+      fileInput.value = "";
+    }
   });
 
-  btnSave.addEventListener("click", saveEdits);
-  btnDelete.addEventListener("click", deleteCurrent);
+  btnPrint.addEventListener("click", ()=> window.print());
 
-  btnExport.addEventListener("click", exportJSON);
-  btnImport.addEventListener("click", () => fileInput.click());
-  fileInput.addEventListener("change", (e) => {
-    const f = e.target.files && e.target.files[0];
-    if(f) importJSON(f);
-    fileInput.value = "";
+  btnClearAll.addEventListener("click", ()=>{
+    if(!confirm("確定要清空全部資料嗎？此動作不可復原。")) return;
+    saveRecords({});
+    currentKey = null;
+    refreshList();
+    showEmpty();
   });
 
-  btnClearAll.addEventListener("click", clearAll);
+  btnSave.addEventListener("click", ()=>{
+    if(!currentKey) return;
+    const rec = currentRecords[currentKey];
+    if(!rec) return;
 
-  renderList();
+    const newName = (editName.value || "").trim();
+    if(!newName){ alert("名字不能空白。"); return; }
+
+    const records = loadRecords();
+    const updated = { ...rec, name:newName, notes: editNotes.value || "", updatedAt: new Date().toISOString() };
+
+    if(newName !== currentKey){
+      delete records[currentKey];
+      records[newName] = updated;
+      saveRecords(records);
+      currentKey = newName;
+    }else{
+      records[currentKey] = updated;
+      saveRecords(records);
+    }
+
+    alert("已儲存！");
+    refreshList();
+    openDetail(currentKey);
+  });
+
+  btnDelete.addEventListener("click", ()=>{
+    if(!currentKey) return;
+    if(!confirm(`確定刪除「${currentKey}」這筆資料嗎？`)) return;
+    const records = loadRecords();
+    delete records[currentKey];
+    saveRecords(records);
+    currentKey = null;
+    refreshList();
+    showEmpty();
+  });
+
+  btnCopyText.addEventListener("click", ()=>{
+    if(!currentKey) return;
+    const rec = currentRecords[currentKey];
+    if(!rec) return;
+    copyToClipboard(buildShareText(currentKey, rec));
+  });
+
+  btnCopyLinkHint.addEventListener("click", ()=>{
+    alert("這套前/後台使用 localStorage 儲存資料（同一台、同一瀏覽器可讀）。\n\n若要跨裝置：\n1) 後台「匯出 JSON」\n2) 在另一台後台「匯入 JSON」\n\n若你希望一鍵生成可分享的『結果頁 HTML』，我也可以再幫你加。");
+  });
+
+  window.addEventListener("resize", ()=>{
+    if(!currentKey) return;
+    const rec = currentRecords[currentKey];
+    if(!rec) return;
+    const maxScore = getMaxScoreFromRecord(rec);
+    drawRadar(rec.scores||{}, maxScore);
+    drawPie(rec.scores||{}, maxScore);
+  });
+
+  refreshList();
+  showEmpty();
 </script>
 </body>
 </html>
