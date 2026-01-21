@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Teaching Persona 後台｜受測者資料</title>
+  <style>
+    :root { --gap: 14px; --radius: 14px; }
+    html { font-size: 130%; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans TC", sans-serif; line-height:1.5; background:#f7f7fb; color:#111; }
+    .wrap{ max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .card{ background:#fff; border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0,0,0,.07); padding: 20px; }
+    h1{ font-size: 1.4rem; margin:0 0 6px; }
+    h2{ font-size: 1.15rem; margin: 18px 0 8px; }
+    p{ margin: 8px 0; }
+    .muted{ color:#444; font-size: 0.8rem; }
+    .row{ display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    input, textarea{
+      border:1px solid #e7ecff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      outline:none;
+      font-weight: 700;
+      background:#fff;
+      font-size: 0.9rem;
+    }
+    input:focus, textarea:focus{ border-color:#2f4bff; box-shadow: 0 0 0 3px rgba(47,75,255,0.12); }
+    textarea{ width: 100%; min-height: 120px; font-weight: 600; line-height: 1.5; }
+    button{
+      border:0; border-radius: 12px; padding: 10px 14px; cursor:pointer; font-weight: 800;
+      font-size: 0.85rem;
+    }
+    .primary{ background:#2f4bff; color:#fff; }
+    .ghost{ background:#eef0ff; color:#111; }
+    .danger{ background:#ffecec; color:#a20000; }
+    button[disabled]{ opacity:.55; cursor:not-allowed; }
+
+    .table{ width: 100%; border-collapse: collapse; }
+    .table th, .table td{ padding: 10px 10px; border-bottom: 1px solid #eef0ff; text-align:left; vertical-align: top; }
+    .table th{ font-size: 0.85rem; color:#222; }
+    .pill{ display:inline-block; padding: 2px 8px; border:1px solid #e7ecff; border-radius: 999px; font-size: 0.8rem; background:#fff; }
+    .grid2{ display:grid; grid-template-columns: 1fr; gap: var(--gap); margin-top: 14px; }
+    @media(min-width: 960px){ .grid2{ grid-template-columns: 1.1fr .9fr; } }
+    .box{ border:1px solid #e7ecff; border-radius: 14px; padding: 14px; background:#f9fbff; }
+    .small{ font-size: 0.8rem; color:#333; }
+    .footer{ margin-top: 16px; font-size: 0.8rem; color:#666; }
+    .hidden{ display:none; }
+    code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Teaching Persona 後台｜受測者資料</h1>
+      <p class="muted">資料存放在本機瀏覽器的 <b>localStorage</b>（同一台裝置、同一個瀏覽器才看得到）。同名會自動覆蓋最新結果。</p>
+      <div class="row" style="margin-top:10px;">
+        <button class="primary" id="btnReload">重新整理列表</button>
+        <button class="ghost" id="btnExport">匯出 JSON</button>
+        <button class="ghost" id="btnImport">匯入 JSON（覆蓋）</button>
+        <button class="danger" id="btnClearAll">清空全部</button>
+        <input id="search" type="text" placeholder="搜尋名字…" style="flex:1 1 220px; min-width:180px;" />
+      </div>
+      <input id="fileInput" type="file" accept="application/json" class="hidden" />
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h2>受測者列表</h2>
+      <div class="muted">點「預覽/編輯」可查看與修改；修改後會直接寫回本機資料。</div>
+      <div style="overflow:auto; margin-top:10px;">
+        <table class="table" id="tbl">
+          <thead>
+            <tr>
+              <th style="width: 22%;">姓名</th>
+              <th style="width: 22%;">更新時間</th>
+              <th>最高傾向</th>
+              <th style="width: 20%;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="footer">若你要跨裝置集中管理，建議之後把資料改存到 Google Sheet / Airtable / DB（這版先用本機後台方便你測流程）。</div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h2>預覽與編輯</h2>
+      <div class="grid2">
+        <div class="box">
+          <div class="row">
+            <input id="editName" type="text" placeholder="姓名" style="flex:1 1 200px; min-width:180px;" />
+            <span class="pill" id="editUpdated">未選取</span>
+          </div>
+
+          <div style="margin-top:10px;">
+            <div class="small"><b>答案（每題一個 A/B/C/D；逗號或換行皆可）</b></div>
+            <textarea id="editAnswers" placeholder="例如：A,B,C,D,...（共 15 題）"></textarea>
+            <div class="muted" id="ansHint"></div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <div class="small"><b>分數（由答案自動計算；也會顯示百分比）</b></div>
+            <div id="editScores" class="small"></div>
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="primary" id="btnSave" disabled>儲存修改</button>
+            <button class="ghost" id="btnRecalc" disabled>重新計算分數</button>
+            <button class="danger" id="btnDelete" disabled>刪除此人</button>
+          </div>
+          <div class="muted" id="editMsg" style="margin-top:8px;"></div>
+        </div>
+
+        <div class="box">
+          <div class="small"><b>結果摘要預覽</b></div>
+          <div id="preview" style="margin-top:8px;"></div>
+          <div style="margin-top:10px;">
+            <div class="small"><b>原始 JSON</b></div>
+            <pre id="raw" style="white-space:pre-wrap; word-break:break-word; margin:8px 0 0; font-size:0.8rem;"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const STORAGE_KEY = "teaching_persona_assessments_v1";
+
+  function loadRecords(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return {};
+      const obj = JSON.parse(raw);
+      return (obj && typeof obj === "object") ? obj : {};
+    }catch(e){ return {}; }
+  }
+  function saveRecords(obj){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }catch(e){}
+  }
+
+  // Scoring must match quiz: 2 points per answered choice
+  function scoreAnswers(answers){
+    const s = {A:0,B:0,C:0,D:0};
+    answers.forEach(a => { if(a && s[a] !== undefined) s[a] += 2; });
+    return s;
+  }
+  function parseAnswers(text){
+    if(!text) return [];
+    const parts = text.split(/[\s,，]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
+    return parts;
+  }
+  function fmtISO(iso){
+    try{
+      const d = new Date(iso);
+      if(isNaN(d.getTime())) return iso || "";
+      return d.toLocaleString("zh-Hant", { hour12:false });
+    }catch(e){ return iso || ""; }
+  }
+  function topFromRecord(rec){
+    if(rec && rec.ranked && rec.ranked[0]) return rec.ranked[0].title || rec.ranked[0].key || "";
+    if(rec && rec.summaryText && rec.summaryText.top) return rec.summaryText.top;
+    return "";
+  }
+
+  const tbody = document.getElementById("tbody");
+  const search = document.getElementById("search");
+
+  const editName = document.getElementById("editName");
+  const editUpdated = document.getElementById("editUpdated");
+  const editAnswers = document.getElementById("editAnswers");
+  const editScores = document.getElementById("editScores");
+  const preview = document.getElementById("preview");
+  const raw = document.getElementById("raw");
+  const ansHint = document.getElementById("ansHint");
+  const editMsg = document.getElementById("editMsg");
+
+  const btnReload = document.getElementById("btnReload");
+  const btnExport = document.getElementById("btnExport");
+  const btnImport = document.getElementById("btnImport");
+  const btnClearAll = document.getElementById("btnClearAll");
+
+  const btnSave = document.getElementById("btnSave");
+  const btnRecalc = document.getElementById("btnRecalc");
+  const btnDelete = document.getElementById("btnDelete");
+  const fileInput = document.getElementById("fileInput");
+
+  let currentKey = null; // original name key in storage
+
+  function renderList(){
+    const q = (search.value || "").trim().toLowerCase();
+    const records = loadRecords();
+    const rows = Object.values(records)
+      .filter(r => !q || (r.name || "").toLowerCase().includes(q))
+      .sort((a,b) => (b.updatedAt||"").localeCompare(a.updatedAt||""));
+
+    tbody.innerHTML = rows.map(r => {
+      const name = r.name || "";
+      const updated = fmtISO(r.updatedAt);
+      const top = topFromRecord(r);
+      return `
+        <tr>
+          <td><b>${escapeHtml(name)}</b></td>
+          <td><span class="pill">${escapeHtml(updated)}</span></td>
+          <td>${escapeHtml(top)}</td>
+          <td>
+            <button class="ghost" data-act="open" data-name="${escapeAttr(name)}">預覽/編輯</button>
+          </td>
+        </tr>
+      `;
+    }).join("") || `<tr><td colspan="4" class="muted">目前沒有資料（請先在測驗頁完成測驗）。</td></tr>`;
+
+    // bind
+    tbody.querySelectorAll('button[data-act="open"]').forEach(btn => {
+      btn.addEventListener("click", () => openRecord(btn.getAttribute("data-name")));
+    });
+  }
+
+  function openRecord(name){
+    const records = loadRecords();
+    const rec = records[name];
+    if(!rec){ return; }
+    currentKey = name;
+
+    editName.value = rec.name || name;
+    editUpdated.textContent = rec.updatedAt ? ("更新：" + fmtISO(rec.updatedAt)) : "未選取";
+
+    const answers = Array.isArray(rec.answers) ? rec.answers : [];
+    editAnswers.value = answers.join(",");
+
+    updateComputedPanels();
+
+    raw.textContent = JSON.stringify(rec, null, 2);
+    preview.innerHTML = buildPreview(rec);
+
+    btnSave.disabled = false;
+    btnRecalc.disabled = false;
+    btnDelete.disabled = false;
+    editMsg.textContent = "";
+  }
+
+  function updateComputedPanels(){
+    const answers = parseAnswers(editAnswers.value);
+    const s = scoreAnswers(answers);
+    const total = answers.length * 2 || 1;
+    const pct = (k) => Math.round((s[k] / (Math.max(1, answers.length*2))) * 100);
+
+    ansHint.textContent = `目前答案數：${answers.length}（建議與測驗題數一致）`;
+
+    editScores.innerHTML = `
+      A：${s.A} 分（${pct("A")}%）　｜　B：${s.B} 分（${pct("B")}%）<br/>
+      C：${s.C} 分（${pct("C")}%）　｜　D：${s.D} 分（${pct("D")}%）
+    `;
+  }
+
+  function buildPreview(rec){
+    const s = rec.scores || {};
+    const top = topFromRecord(rec);
+    const badges = (rec.summaryText && Array.isArray(rec.summaryText.badges)) ? rec.summaryText.badges : [];
+    return `
+      <div class="small"><b>姓名：</b>${escapeHtml(rec.name || "")}</div>
+      <div class="small" style="margin-top:6px;"><b>最高傾向：</b>${escapeHtml(top)}</div>
+      <div class="small" style="margin-top:6px;">
+        <b>分數：</b>
+        A ${escapeHtml(String(s.A ?? ""))} / B ${escapeHtml(String(s.B ?? ""))} / C ${escapeHtml(String(s.C ?? ""))} / D ${escapeHtml(String(s.D ?? ""))}
+      </div>
+      <div class="small" style="margin-top:6px;"><b>輪廓標記：</b>${badges.length ? escapeHtml(badges.join("、")) : "—"}</div>
+    `;
+  }
+
+  function saveEdits(){
+    const newName = (editName.value || "").trim();
+    if(!newName){ editMsg.textContent = "請先輸入姓名。"; return; }
+
+    const answers = parseAnswers(editAnswers.value);
+    const scores = scoreAnswers(answers);
+
+    const records = loadRecords();
+    const old = records[currentKey];
+    if(!old){ editMsg.textContent = "找不到原資料，請重新整理列表。"; return; }
+
+    const updatedAt = new Date().toISOString();
+    const ranked = ["A","B","C","D"].map(k => ({ key:k, title:k, score:scores[k] }))
+      .sort((a,b)=>b.score-a.score);
+
+    const record = {
+      ...old,
+      name: newName,
+      updatedAt,
+      answers,
+      scores,
+      ranked,
+      summaryText: {
+        top: ranked[0]?.key || "",
+        second: ranked[1]?.key || "",
+        hybrid: (ranked[1] && ranked[1].score >= ranked[0].score - 2) || false,
+        badges: (old.summaryText && old.summaryText.badges) ? old.summaryText.badges : []
+      }
+    };
+
+    // rename key if needed
+    if(newName !== currentKey){
+      delete records[currentKey];
+      currentKey = newName;
+    }
+    records[newName] = record;
+    saveRecords(records);
+
+    raw.textContent = JSON.stringify(record, null, 2);
+    preview.innerHTML = buildPreview(record);
+    editUpdated.textContent = "更新：" + fmtISO(updatedAt);
+    editMsg.textContent = "已儲存。";
+    renderList();
+  }
+
+  function deleteCurrent(){
+    if(!currentKey) return;
+    if(!confirm("確定要刪除此人的資料嗎？")) return;
+    const records = loadRecords();
+    delete records[currentKey];
+    saveRecords(records);
+
+    currentKey = null;
+    editName.value = "";
+    editUpdated.textContent = "未選取";
+    editAnswers.value = "";
+    editScores.innerHTML = "";
+    preview.innerHTML = "";
+    raw.textContent = "";
+    btnSave.disabled = true;
+    btnRecalc.disabled = true;
+    btnDelete.disabled = true;
+    editMsg.textContent = "已刪除。";
+    renderList();
+  }
+
+  function exportJSON(){
+    const records = loadRecords();
+    const blob = new Blob([JSON.stringify(records, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "teaching_persona_records.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function importJSON(file){
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const obj = JSON.parse(reader.result);
+        if(!obj || typeof obj !== "object") throw new Error("format");
+        if(!confirm("匯入會覆蓋目前本機資料，確定繼續嗎？")) return;
+        saveRecords(obj);
+        renderList();
+        alert("已匯入。");
+      }catch(e){
+        alert("匯入失敗：檔案格式不是合法 JSON。");
+      }
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  function clearAll(){
+    if(!confirm("確定要清空全部資料嗎？此動作不可復原。")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    renderList();
+    deleteCurrent(); // resets UI
+  }
+
+  function escapeHtml(s){
+    return String(s || "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+  function escapeAttr(s){
+    return String(s || "").replace(/"/g, "&quot;");
+  }
+
+  // events
+  btnReload.addEventListener("click", renderList);
+  search.addEventListener("input", renderList);
+
+  editAnswers.addEventListener("input", () => {
+    updateComputedPanels();
+    editMsg.textContent = "";
+  });
+
+  btnRecalc.addEventListener("click", () => {
+    updateComputedPanels();
+    editMsg.textContent = "已重新計算分數（尚未儲存）。";
+  });
+
+  btnSave.addEventListener("click", saveEdits);
+  btnDelete.addEventListener("click", deleteCurrent);
+
+  btnExport.addEventListener("click", exportJSON);
+  btnImport.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if(f) importJSON(f);
+    fileInput.value = "";
+  });
+
+  btnClearAll.addEventListener("click", clearAll);
+
+  renderList();
+</script>
+</body>
+</html>
