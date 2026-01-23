@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>課前敘事偏好問卷（前台）</title>
+  <style>
+    :root{--bg:#f6f7fb;--card:#fff;--text:#111;--muted:#555;--primary:#2f4bff;--border:#e7ecff;--danger:#b00020;--radius:14px;--gap:14px;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,"Noto Sans TC",sans-serif;line-height:1.55;background:var(--bg);color:var(--text)}
+    .wrap{max-width:980px;margin:0 auto;padding:24px}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 24px rgba(0,0,0,.07);padding:20px}
+    h1{font-size:1.4rem;margin:0 0 8px}
+    h2{font-size:1.15rem;margin:18px 0 8px}
+    h3{font-size:1rem;margin:0 0 8px}
+    p{margin:8px 0}
+    .muted{color:var(--muted);font-size:.9rem}
+
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:220px}
+    input{width:100%;padding:12px;border:1px solid #dfe3ff;border-radius:12px;background:#fff;font-size:1rem}
+    input:focus{outline:2px solid rgba(47,75,255,.2);border-color:#bfc8ff}
+
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    button{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:800;font-size:1rem}
+    button[disabled]{opacity:.5;cursor:not-allowed}
+    .primary{background:var(--primary);color:#fff}
+    .ghost{background:#eef0ff;color:#111}
+    .danger{background:#ffecec;color:var(--danger)}
+
+    .hidden{display:none}
+
+    .q{border:1px solid #eee;border-radius:12px;padding:14px;margin:12px 0;background:#fff}
+    .q-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+    .q-title{font-weight:900}
+    .q-meta{font-size:.85rem;color:#666}
+
+    .choices{display:grid;gap:10px;margin-top:10px}
+    .choice{display:grid;grid-template-columns:24px 1fr;align-items:flex-start;gap:12px;display:flex;gap:10px;align-items:flex-start;border:1px solid #e8e8ef;border-radius:12px;padding:12px;background:#fafafe}
+    .choice input{width:18px;height:18px;flex:0 0 auto;margin-top:3px}
+
+    .result{border-radius:16px;padding:16px;background:#f9fbff;border:1px solid var(--border)}
+    .pillRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .pill{border:1px solid var(--border);background:#fff;padding:8px 10px;border-radius:999px;font-size:.95rem}
+    .pill b{font-weight:900}
+
+    .barWrap{display:grid;gap:10px;margin-top:10px}
+    .barItem{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--border);background:#fff;border-radius:12px;padding:10px 12px}
+    .barLabel{font-weight:900}
+    .barPct{color:#444}
+
+    .note{border:1px dashed var(--border);background:#fff;border-radius:14px;padding:12px;margin-top:12px}
+
+    .footer{margin-top:16px;color:#666;font-size:.85rem}
+
+    @media (max-width:520px){
+      .wrap{padding:14px}
+      .card{padding:16px}
+      button{width:100%}
+    }
+
+    @media print{.btns,#startCard{display:none !important} body{background:#fff} .card{box-shadow:none}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="card" id="startCard">
+      <h1>課前敘事偏好問卷</h1>
+      <p class="muted">用你平常愛看的影集/電影「敘事節奏」來推敲：你在備課時，哪一種起承轉合最自然、最能吸住人。</p>
+
+      <div class="row" style="margin-top:12px;">
+        <div class="field">
+          <label class="muted" for="nameInput">請輸入名字（必填）</label>
+          <input id="nameInput" placeholder="例如：小明 / Jimmy" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label class="muted" for="showInput">你最近很喜歡的一部劇/電影（選填）</label>
+          <input id="showInput" placeholder="例如：The Bear / 甄嬛傳 / …" />
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="btnStart" disabled>開始作答</button>
+        <button class="ghost" id="btnFillDemo" title="快速填入示範答案，方便你測試流程">填入示範答案</button>
+        <button class="danger" id="btnReset" title="清空此人作答並回到開始">清空作答</button>
+      </div>
+
+      <p class="footer">資料會儲存在你的瀏覽器（localStorage）。若要看所有受測者/匯出 JSON，請打開後台頁面。</p>
+    </div>
+
+    <div class="card hidden" id="quizCard" style="margin-top:16px;">
+      <h2>作答區</h2>
+      <p class="muted">每題三選一。選你「最偏好/看得最舒服」的敘事方式。</p>
+      <div id="questions"></div>
+      <div class="btns">
+        <button class="primary" id="btnSubmit">看結果</button>
+        <button class="ghost" id="btnScrollTop">回到頂部</button>
+      </div>
+      <p id="err" class="muted" style="color:var(--danger);"></p>
+    </div>
+
+    <div class="card hidden" id="resultCard" style="margin-top:16px;">
+      <h2>你的結果</h2>
+      <div id="resultSummary" class="result"></div>
+
+      <div class="result" style="margin-top:14px;">
+        <h3>三種敘事偏好分佈</h3>
+        <div class="muted">不是好壞，是你「最自然會用的故事引擎」。</div>
+        <div class="barWrap" id="scoreBars"></div>
+      </div>
+
+      <div class="result" style="margin-top:14px;">
+        <h3>把你的偏好，翻譯成備課模板</h3>
+        <div id="templateBlock"></div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="btnRetake">再測一次</button>
+        <button class="ghost" id="btnCopy">複製結果摘要</button>
+        <button class="ghost" id="btnPrint">列印 / 存成 PDF</button>
+      </div>
+
+      <div class="footer">＊若你三種分數很接近，代表你可切換多種敘事。備課時可依課程屬性（知識/實作/分享）挑最適合的一種來當主線。</div>
+    </div>
+
+  </div>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'narrative_survey_v1_records';
+
+  // 3 種敘事引擎
+  const ARCH = {
+    M: {
+      key:'M',
+      title:'任務推進型（直線主線）',
+      one:'你喜歡「有一條清楚主線」：目標→阻礙→解法→完成。',
+      course:'很適合做技能課/工具課：學員跟著做，最後一定要完成一個可交付成果。',
+      template:[
+        '開場：一句話目標（今天要完成什麼）＋一個痛點情境',
+        '起：先示範最終成果長什麼樣（讓人想追下去）',
+        '承：拆成 3–5 個任務關卡（每關 10–15 分鐘）',
+        '轉：中段安排一個「最大阻礙」：最常卡的錯誤／坑',
+        '合：最後交付成果＋檢核清單＋下一關（回家作業）'
+      ]
+    },
+    T: {
+      key:'T',
+      title:'反轉揭露型（驚喜與洞察）',
+      one:'你喜歡「一路被揭露」：先以為是 A，後來發現其實是 B。',
+      course:'很適合做策略/思維課：用對照案例與反轉，讓學員「突然看懂差別」。',
+      template:[
+        '開場：丟一個看似合理但其實錯的直覺（或常見迷思）',
+        '起：先讓大家選邊站/投票（把直覺叫出來）',
+        '承：用 2–3 個案例逐步揭露：為什麼直覺會失效',
+        '轉：關鍵反轉：給出 1 個核心判準（或一張框架圖）',
+        '合：再回到原題重做一次（前後對照），留下「判準清單」'
+      ]
+    },
+    C: {
+      key:'C',
+      title:'角色成長型（陪伴與變強）',
+      one:'你喜歡「跟著主角變強」：每一集都有進步、卡關、再突破。',
+      course:'很適合做工作坊/導師課：用兩輪練習＋回饋，讓學員感到自己真的升級。',
+      template:[
+        '開場：讓學員先做一版（不教先做）—快速暴露卡點',
+        '起：把卡點分類（今天只解決 1–2 個最關鍵的）',
+        '承：示範＋學員再做一輪（每輪都要有小成果）',
+        '轉：中段安排「Boss 關」：高頻錯誤或進階挑戰',
+        '合：第三輪微挑戰（可選），最後給「下一步練法」'
+      ]
+    }
+  };
+
+  // 5 題、每題 3 選項（各對應到一種敘事引擎）
+  const QUESTIONS = [
+    {
+      title:'你看一部劇/電影時，最容易被什麼吸住？',
+      choices:[
+        {k:'M', text:'一開始就知道主角要達成什麼目標，然後一路闖關。'},
+        {k:'T', text:'每隔一段就有「原來是這樣！」的揭露或反轉。'},
+        {k:'C', text:'角色慢慢變強、變成熟，你會想陪他走到底。'}
+      ]
+    },
+    {
+      title:'如果要你推薦一部「很有節奏」的作品，你通常指的是？',
+      choices:[
+        {k:'M', text:'每一段都推進主線，不拖泥帶水，最後有漂亮的完成。'},
+        {k:'T', text:'節奏像解謎：線索→推理→翻盤→再翻盤。'},
+        {k:'C', text:'節奏像陪跑：每段都有小進步，最後整體大升級。'}
+      ]
+    },
+    {
+      title:'你最有印象的劇情高潮是什麼樣子？',
+      choices:[
+        {k:'M', text:'主角把難題解掉，任務完成，觀眾很爽很滿足。'},
+        {k:'T', text:'關鍵真相揭露，前面的一切突然串起來。'},
+        {k:'C', text:'主角突破心魔或技能，前後差距很明顯。'}
+      ]
+    },
+    {
+      title:'你最不愛的敘事是？（選你最不偏好的那種）',
+      choices:[
+        {k:'M', text:'沒有主線、看完不知道到底想帶我去哪裡。'},
+        {k:'T', text:'一直鋪梗但沒有真正的洞察/反轉，像在繞圈。'},
+        {k:'C', text:'一直講道理但角色/技能沒真的變化，像原地踏步。'}
+      ],
+      reverse:true // 這題是「最不愛」：選到哪個，就代表你相對不偏好該引擎
+    },
+    {
+      title:'你希望一堂課結束時，自己最有感的收穫是？',
+      choices:[
+        {k:'M', text:'我能把一個東西做出來／完成一個任o成果。'},
+        {k:'T', text:'我突然看懂差別，有一套判準會用。'},
+        {k:'C', text:'我比一開始進步很多，知道下一步怎麼練。'}
+      ]
+    }
+  ];
+
+  // DOM
+  const nameInput = document.getElementById('nameInput');
+  const showInput = document.getElementById('showInput');
+  const btnStart = document.getElementById('btnStart');
+  const btnFillDemo = document.getElementById('btnFillDemo');
+  const btnReset = document.getElementById('btnReset');
+
+  const quizCard = document.getElementById('quizCard');
+  const resultCard = document.getElementById('resultCard');
+  const questionsEl = document.getElementById('questions');
+  const errEl = document.getElementById('err');
+
+  const btnSubmit = document.getElementById('btnSubmit');
+  const btnScrollTop = document.getElementById('btnScrollTop');
+  const btnRetake = document.getElementById('btnRetake');
+  const btnCopy = document.getElementById('btnCopy');
+  const btnPrint = document.getElementById('btnPrint');
+
+  function safeName(raw){
+    return String(raw||'').trim().replace(/\s+/g,' ').slice(0,60);
+  }
+
+  function loadAll(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}; }
+    catch(e){ return {}; }
+  }
+  function saveAll(obj){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+  }
+
+  function setStartEnabled(){
+    const ok = safeName(nameInput.value).length > 0;
+    btnStart.disabled = !ok;
+  }
+
+  function renderQuestions(){
+    questionsEl.innerHTML = '';
+    QUESTIONS.forEach((q, idx) => {
+      const qDiv = document.createElement('div');
+      qDiv.className = 'q';
+      qDiv.innerHTML = `
+        <div class="q-head">
+          <div class="q-title">Q${idx+1}. ${q.title}</div>
+          <div class="q-meta">必填</div>
+        </div>
+        <div class="choices">
+          ${q.choices.map((c,j)=>{
+            const id = `q${idx}_c${j}`;
+            return `
+              <label class="choice" for="${id}">
+                <input type="radio" name="q${idx}" id="${id}" value="${c.k}">
+                <div>${c.text}</div>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      `;
+      questionsEl.appendChild(qDiv);
+    });
+  }
+
+  function showQuiz(){
+    quizCard.classList.remove('hidden');
+    resultCard.classList.add('hidden');
+    window.scrollTo({top: quizCard.offsetTop - 10, behavior:'smooth'});
+  }
+
+  function getAnswers(){
+    const ans=[];
+    for(let i=0;i<QUESTIONS.length;i++){
+      const el = document.querySelector(`input[name="q${i}"]:checked`);
+      ans.push(el ? el.value : null);
+    }
+    return ans;
+  }
+
+  function clearAnswers(){
+    document.querySelectorAll('input[type="radio"]').forEach(r=>r.checked=false);
+    errEl.textContent='';
+  }
+
+  function fillDemo(){
+    QUESTIONS.forEach((q,i)=>{
+      const radios = Array.from(document.querySelectorAll(`input[name="q${i}"]`));
+      if(!radios.length) return;
+      radios[Math.floor(Math.random()*radios.length)].checked=true;
+    });
+  }
+
+  function validateAllAnswered(ans){
+    const missing = ans.map((a,i)=>a?null:i+1).filter(Boolean);
+    if(missing.length){
+      errEl.textContent = `你還有 ${missing.length} 題未作答：Q${missing.join(', Q')}`;
+      return false;
+    }
+    errEl.textContent='';
+    return true;
+  }
+
+  function score(ans){
+    // 每題 2 分；reverse 題：選到哪個代表「不偏好」，因此把分數給另外兩個
+    const s = {M:0,T:0,C:0};
+    ans.forEach((k, idx)=>{
+      const q = QUESTIONS[idx];
+      if(!k) return;
+      if(q.reverse){
+        Object.keys(s).forEach(kk=>{ if(kk!==k) s[kk]+=2; });
+      } else {
+        s[k]+=2;
+      }
+    });
+    return s;
+  }
+
+  function rank(s){
+    return Object.entries(s)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([k,v])=>({key:k, score:v, ...ARCH[k]}));
+  }
+
+  function pct(v,max){
+    return Math.round((v/max)*100);
+  }
+
+  function buildSummary(name, fav, ranked, s){
+    const max = QUESTIONS.length*2;
+    const top1 = ranked[0], top2 = ranked[1];
+    const hybrid = (top2.score >= top1.score - 2);
+
+    const pills = ranked.map(r=>{
+      return `<span class="pill"><b>${r.title}</b>：${pct(r.score,max)}%</span>`;
+    }).join('');
+
+    return `
+      <p style="margin:0 0 8px;"><b>${name}</b>${fav?`（最近喜歡：${escapeHtml(fav)}）`:''}</p>
+      <p style="margin:0 0 10px;"><b>你的主力敘事引擎：</b>${top1.title}${hybrid?`（次高也很接近：${top2.title}）`:''}</p>
+      <div class="note">
+        <div style="font-weight:900; margin-bottom:6px;">你為什麼會偏好它</div>
+        <div class="muted">${top1.one}</div>
+        <div class="muted" style="margin-top:6px;">課程上：${top1.course}</div>
+      </div>
+      <div class="pillRow">${pills}</div>
+    `;
+  }
+
+  function renderBars(s){
+    const max = QUESTIONS.length*2;
+    const ranked = rank(s);
+    document.getElementById('scoreBars').innerHTML = ranked.map(r=>{
+      return `
+        <div class="barItem">
+          <div class="barLabel">${r.title}</div>
+          <div class="barPct">${pct(r.score,max)}%</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderTemplate(ranked){
+    const top = ranked[0];
+    const html = `
+      <div class="note">
+        <div style="font-weight:900; margin-bottom:6px;">${top.title}｜一張可直接套用的起承轉合</div>
+        <ol style="margin:0 0 0 18px;">
+          ${top.template.map(x=>`<li>${x}</li>`).join('')}
+        </ol>
+      </div>
+      <div class="note">
+        <div style="font-weight:900; margin-bottom:6px;">把「影集感」帶進課堂的小技巧</div>
+        <ul style="margin:0 0 0 18px;">
+          <li>每 10–15 分鐘要有一次事件：練習/投票/對照/小挑戰（像每一集的小高潮）。</li>
+          <li>每段都要留下可見產出：一句話、清單、草圖、截圖（像每集的「進度」）。</li>
+          <li>中段一定要有一個轉折：錯誤示範、反例、Boss 關（讓人重新聚焦）。</li>
+        </ul>
+      </div>
+    `;
+    document.getElementById('templateBlock').innerHTML = html;
+  }
+
+  function persistRecord(name, fav, ans, s, ranked){
+    const all = loadAll();
+    const key = name;
+    all[key] = {
+      name,
+      fav: fav || '',
+      answers: ans,
+      scores: s,
+      top: ranked[0].key,
+      updatedAt: new Date().toISOString(),
+      version: 1
+    };
+    saveAll(all);
+  }
+
+  function showResults(){
+    const name = safeName(nameInput.value);
+    const fav = String(showInput.value||'').trim().slice(0,120);
+    const ans = getAnswers();
+    if(!validateAllAnswered(ans)){
+      const idx = ans.findIndex(a=>!a);
+      const qEl = document.querySelectorAll('.q')[idx];
+      if(qEl) qEl.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+
+    const s = score(ans);
+    const ranked = rank(s);
+
+    document.getElementById('resultSummary').innerHTML = buildSummary(name, fav, ranked, s);
+    renderBars(s);
+    renderTemplate(ranked);
+
+    persistRecord(name, fav, ans, s, ranked);
+
+    resultCard.classList.remove('hidden');
+    window.scrollTo({top: resultCard.offsetTop - 10, behavior:'smooth'});
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#039;');
+  }
+
+  // events
+  renderQuestions();
+  setStartEnabled();
+
+  nameInput.addEventListener('input', setStartEnabled);
+
+  btnStart.addEventListener('click', () => {
+    showQuiz();
+  });
+
+  btnFillDemo.addEventListener('click', () => {
+    showQuiz();
+    fillDemo();
+  });
+
+  btnReset.addEventListener('click', () => {
+    // 清空這個名字的紀錄
+    const name = safeName(nameInput.value);
+    if(!name){
+      // 沒名字就只清空畫面
+      clearAnswers();
+      quizCard.classList.add('hidden');
+      resultCard.classList.add('hidden');
+      window.scrollTo({top:0, behavior:'smooth'});
+      return;
+    }
+    const all = loadAll();
+    delete all[name];
+    saveAll(all);
+    clearAnswers();
+    showInput.value='';
+    quizCard.classList.add('hidden');
+    resultCard.classList.add('hidden');
+    window.scrollTo({top:0, behavior:'smooth'});
+    alert('已清空此人作答與紀錄。');
+  });
+
+  btnScrollTop.addEventListener('click', ()=> window.scrollTo({top:0, behavior:'smooth'}));
+  btnSubmit.addEventListener('click', showResults);
+  btnRetake.addEventListener('click', () => { clearAnswers(); showQuiz(); });
+  btnPrint.addEventListener('click', () => window.print());
+
+  btnCopy.addEventListener('click', async () => {
+    const name = safeName(nameInput.value);
+    const ans = getAnswers();
+    if(!name || !ans.every(Boolean)) { alert('請先完成作答並產生結果。'); return; }
+
+    const s = score(ans);
+    const ranked = rank(s);
+    const max = QUESTIONS.length*2;
+    const top = ranked[0];
+
+    const text = `課前敘事偏好問卷結果\n`+
+      `- 名字：${name}\n`+
+      `- 主力敘事引擎：${top.title}\n`+
+      `- 分佈：${ranked.map(r=>r.title + ' ' + pct(r.score,max) + '%').join(' / ')}\n`+
+      `- 可套用模板：\n  1) ${top.template[0]}\n  2) ${top.template[1]}\n  3) ${top.template[2]}\n  4) ${top.template[3]}\n  5) ${top.template[4]}`;
+
+    try{ await navigator.clipboard.writeText(text); alert('已複製結果摘要！'); }
+    catch(e){ alert('複製失敗（瀏覽器可能不允許）。你可以手動選取結果文字。'); }
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>課前敘事偏好問卷（後台）</title>
+  <style>
+    :root{--bg:#0a0e17;--card:#11151c;--text:#fff;--muted:rgba(255,255,255,.7);--primary:#00f2ff;--border:rgba(0,242,255,.35);--danger:#ff4d4d;--warn:#ffca28;--radius:14px;--gap:14px;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,"Noto Sans TC",sans-serif;line-height:1.55;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+    .header{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+    h1{margin:0;font-weight:600;letter-spacing:1px}
+    .sub{color:var(--muted);font-size:.95rem;margin-top:6px}
+
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:16px}
+    .grid{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+    @media (min-width:980px){.grid{grid-template-columns:1.05fr .95fr}}
+
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+    .btn{border:1px solid var(--border);background:#000;color:var(--primary);padding:10px 12px;border-radius:12px;font-weight:800;cursor:pointer}
+    .btn:hover{background:var(--primary);color:#000}
+    .btn.warn{border-color:rgba(255,202,40,.5);color:#ffd666}
+    .btn.warn:hover{background:var(--warn);color:#000}
+    .btn.danger{border-color:rgba(255,77,77,.55);color:#ffb3b3}
+    .btn.danger:hover{background:var(--danger);color:#000}
+    .btn.ghost{background:transparent}
+
+    input, select, textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#000;color:var(--primary);outline:none}
+    textarea{min-height:90px;resize:vertical}
+
+    .stack{display:grid;gap:10px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1;min-width:180px}
+
+    .table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:12px}
+    .table th,.table td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+    .table th{color:rgba(255,255,255,.85);font-size:.9rem;text-align:left}
+    .table td{color:rgba(255,255,255,.78);font-size:.92rem}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(0,242,255,.35);color:var(--primary);background:rgba(0,242,255,.06);font-weight:800;font-size:.85rem}
+    .pill.dim{border-color:rgba(255,255,255,.12);color:rgba(255,255,255,.72);background:rgba(255,255,255,.03);font-weight:700}
+
+    .kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    @media (min-width:700px){.kpi{grid-template-columns:repeat(4,1fr)}}
+    .kpi .box{background:#000;border:1px solid rgba(0,242,255,.22);border-radius:12px;padding:10px}
+    .kpi .n{font-weight:900;font-size:1.25rem;color:#fff}
+    .kpi .l{color:rgba(255,255,255,.68);font-size:.85rem;margin-top:4px}
+
+    .muted{color:var(--muted);font-size:.95rem}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+
+    .split{display:grid;gap:12px}
+
+    .empty{padding:18px;border:1px dashed rgba(255,255,255,.12);border-radius:12px;color:rgba(255,255,255,.68)}
+
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:16px;z-index:99}
+    .modal .panel{width:min(980px,100%);background:#0c111c;border:1px solid rgba(0,242,255,.25);border-radius:16px;padding:14px}
+    .modal .head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .modal .head h2{margin:0;font-size:1.05rem}
+
+    .previewCard{background:#000;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px}
+    .previewGrid{display:grid;gap:12px}
+    @media (min-width:900px){.previewGrid{grid-template-columns:1fr 1fr}}
+
+    canvas{width:100%;height:auto;aspect-ratio:1/1;display:block}
+
+    .notice{padding:10px 12px;border:1px solid rgba(255,202,40,.35);background:rgba(255,202,40,.08);border-radius:12px;color:rgba(255,255,255,.85)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>課前敘事偏好問卷｜後台</h1>
+        <div class="sub">資料存於 <span class="mono">localStorage</span>（同一台裝置 / 同一瀏覽器）。前台填寫後，這裡會同步看到。</div>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="btnReload">重新整理</button>
+        <button class="btn warn" id="btnExport">匯出 JSON</button>
+        <button class="btn warn" id="btnImport">匯入 JSON</button>
+        <button class="btn danger" id="btnClear">清空全部</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="row" style="align-items:end;">
+          <div>
+            <label class="muted">搜尋（姓名 / Email / 作品）</label>
+            <input id="q" placeholder="例如：Jimmy / @shopee.com / 黑暗榮耀" />
+          </div>
+          <div>
+            <label class="muted">排序</label>
+            <select id="sort">
+              <option value="time_desc">最近更新（新→舊）</option>
+              <option value="time_asc">最近更新（舊→新）</option>
+              <option value="name_asc">姓名（A→Z）</option>
+              <option value="name_desc">姓名（Z→A）</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;" id="kpi" class="kpi"></div>
+
+        <div style="margin-top:12px; overflow:auto;">
+          <table class="table" id="tbl">
+            <thead>
+              <tr>
+                <th style="min-width:160px;">受測者</th>
+                <th style="min-width:160px;">偏好敘事</th>
+                <th>作品</th>
+                <th style="min-width:160px;">更新時間</th>
+                <th style="min-width:220px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div id="empty" class="empty" style="display:none; margin-top:12px;">目前沒有任何資料。請先到「前台」填寫問卷。</div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 8px; font-size:1.05rem;">整體分析</h2>
+        <div class="muted" style="margin-bottom:10px;">你可以用這份結果去推估「大多數人偏愛哪種敘事節奏」，並在備課時把主線節奏往該敘事靠攏（但仍建議保留轉折/互動/落地）。</div>
+
+        <div class="split">
+          <div class="previewCard">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <div class="pill">Top 敘事分佈</div>
+              <div class="pill dim" id="totalPill">0 份</div>
+            </div>
+            <div class="row" style="align-items:center;">
+              <canvas id="donut" width="320" height="320" aria-label="Top 敘事分佈圓餅"></canvas>
+            </div>
+          </div>
+
+          <div class="previewCard">
+            <div class="row" style="align-items:center; margin-bottom:8px;">
+              <div class="pill">題目選項熱度</div>
+              <div class="pill dim">Q1–Q5</div>
+            </div>
+            <div id="qHeat" class="stack"></div>
+          </div>
+        </div>
+
+        <div class="notice" style="margin-top:12px;">
+          小提醒：這裡的「偏好」是指<strong>你在觀影時最容易被吸住的敘事節奏</strong>。它能當作你備課時的「主線風格參考」，但好的課仍會混合：<b>清楚</b>、<b>互動</b>、<b>回饋</b>、<b>案例</b>。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview/Edit Modal -->
+  <div class="modal" id="modal">
+    <div class="panel">
+      <div class="head">
+        <h2 id="mTitle">預覽 / 編輯</h2>
+        <button class="btn ghost" id="btnClose">關閉</button>
+      </div>
+
+      <div class="previewGrid">
+        <div class="previewCard">
+          <div class="row" style="align-items:center; justify-content:space-between;">
+            <div>
+              <div class="pill" id="mName">—</div>
+              <div class="muted" id="mMeta" style="margin-top:6px;"></div>
+            </div>
+            <div>
+              <button class="btn danger" id="btnDeleteOne">刪除這筆</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;" class="row">
+            <div class="previewCard" style="flex:1;">
+              <div class="pill">敘事分數</div>
+              <canvas id="radar" width="320" height="320" aria-label="敘事分數雷達"></canvas>
+              <div class="row" style="margin-top:10px; flex-wrap:wrap;">
+                <span class="pill dim" id="sA"></span>
+                <span class="pill dim" id="sB"></span>
+                <span class="pill dim" id="sC"></span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;" class="stack" id="mAnswers"></div>
+        </div>
+
+        <div class="previewCard">
+          <div class="pill">編輯資料</div>
+          <div class="stack" style="margin-top:10px;">
+            <div class="row">
+              <div>
+                <label class="muted">姓名（Key）</label>
+                <input id="eName" placeholder="名字" />
+              </div>
+              <div>
+                <label class="muted">Email</label>
+                <input id="eEmail" placeholder="選填" />
+              </div>
+            </div>
+            <div>
+              <label class="muted">作品（選填）</label>
+              <input id="eShow" placeholder="例如：黑暗榮耀 / 影后 / 鬼滅之刃" />
+            </div>
+            <div>
+              <label class="muted">備註（選填）</label>
+              <textarea id="eNote" placeholder="你想補充的備註"></textarea>
+            </div>
+
+            <div class="row">
+              <button class="btn" id="btnSave">儲存修改</button>
+              <button class="btn warn" id="btnRecalc">重新計算敘事（依目前答案）</button>
+            </div>
+
+            <div class="muted">提示：如果你改了「姓名」，會把資料移到新的 Key（原本那筆會被刪除）。</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const STORAGE_KEY = 'narrative_survey_v1_records';
+
+    const ARCHETYPES = {
+      A:{ key:'A', title:'直線任務型', short:'任務', one:'喜歡清楚的目標與關卡推進。' },
+      B:{ key:'B', title:'反轉揭露型', short:'反轉', one:'喜歡被埋梗、被翻轉、被揭露。' },
+      C:{ key:'C', title:'角色成長型', short:'成長', one:'喜歡跟著角色長大，情感累積。' },
+    };
+
+    const QUESTIONS = [
+      { id:'q1', title:'你最容易被「哪種開場」吸住？', map:{ A:0, B:1, C:2 } },
+      { id:'q2', title:'你喜歡劇/電影怎麼「推進」？', map:{ A:0, B:1, C:2 } },
+      { id:'q3', title:'你最期待的「高潮」長什麼樣？', map:{ A:0, B:1, C:2 } },
+      { id:'q4', title:'看完你最想帶走的是？', map:{ A:0, B:1, C:2 } },
+      { id:'q5', title:'你最舒適的「節奏」是？', map:{ A:0, B:1, C:2 } },
+    ];
+
+    // For heatmap labels must match frontend options order.
+    const OPTION_LABELS = {
+      q1:[
+        '一開始就有明確任務/目標',
+        '先丟謎團或反差，想追下去',
+        '先認識角色與情緒，慢慢投入'
+      ],
+      q2:[
+        '一關一關解任務，越來越難',
+        '不斷揭露新資訊，改寫理解',
+        '關係與內心變化，逐步累積'
+      ],
+      q3:[
+        '成功/破關/完成作品，爽感收束',
+        '大反轉/真相揭露，腦袋打開',
+        '角色做出選擇/轉變，情緒爆點'
+      ],
+      q4:[
+        '一套方法/流程，能照做',
+        '一個新觀點，從此看懂',
+        '一種感覺/共鳴，想行動'
+      ],
+      q5:[
+        '快節奏，事件密度高',
+        '節奏忽快忽慢，有驚喜',
+        '舒服慢熱，越看越投入'
+      ]
+    };
+
+    const $ = (id)=>document.getElementById(id);
+
+    function nowISO(){ return new Date().toISOString(); }
+    function fmtTime(iso){
+      try{
+        const d = new Date(iso);
+        return d.toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      }catch(e){ return iso || '-'; }
+    }
+
+    function safeParse(str, fallback){
+      try{ return JSON.parse(str); }catch(e){ return fallback; }
+    }
+
+    function readAll(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return safeParse(raw, {});
+    }
+
+    function writeAll(obj){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    }
+
+    function toList(obj){
+      return Object.entries(obj).map(([name, rec])=>({ name, rec }));
+    }
+
+    function computeScores(answers){
+      const scores = {A:0,B:0,C:0};
+      for(const q of QUESTIONS){
+        const v = answers[q.id];
+        if(typeof v === 'number'){
+          const key = (v===0)?'A':(v===1)?'B':'C';
+          scores[key] += 2;
+        }
+      }
+      return scores;
+    }
+
+    function rank(scores){
+      return Object.entries(scores)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([k,v])=>({k,v,...ARCHETYPES[k]}));
+    }
+
+    function topLabel(rec){
+      const s = rec.scores || {A:0,B:0,C:0};
+      const ranked = rank(s);
+      const top = ranked[0];
+      const second = ranked[1];
+      const isHybrid = second && (second.v >= top.v - 2);
+      return isHybrid ? `${top.short} × ${second.short}` : top.short;
+    }
+
+    // ===== Charts =====
+    function drawDonut(dist){
+      const c = $('donut');
+      const ctx = c.getContext('2d');
+      const rectW = Math.floor(c.getBoundingClientRect().width || 320);
+      const cssSize = Math.max(240, Math.min(360, rectW));
+      const dpr = window.devicePixelRatio || 1;
+      c.width = Math.round(cssSize * dpr);
+      c.height = Math.round(cssSize * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.clearRect(0,0,cssSize,cssSize);
+
+      const keys = ['A','B','C'];
+      const total = keys.reduce((a,k)=>a+(dist[k]||0),0) || 1;
+      const cx = cssSize/2, cy = cssSize/2;
+      const R = cssSize*0.38;
+      const r0 = R*0.58;
+
+      const alphas = {A:0.9,B:0.65,C:0.4};
+      let ang = -Math.PI/2;
+      for(const k of keys){
+        const v = dist[k]||0;
+        const frac = v/total;
+        const end = ang + frac*Math.PI*2;
+        ctx.beginPath();
+        ctx.moveTo(cx,cy);
+        ctx.arc(cx,cy,R,ang,end);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(0,242,255,${alphas[k]})`;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ang = end;
+      }
+
+      // hole
+      ctx.beginPath();
+      ctx.arc(cx,cy,r0,0,Math.PI*2);
+      ctx.fillStyle = 'rgba(0,0,0,0.88)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // center label
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.font = 'bold 14px ui-sans-serif, system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('Top 敘事', cx, cy-6);
+      ctx.font = '12px ui-sans-serif, system-ui';
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillText('A 任務 / B 反轉 / C 成長', cx, cy+14);
+    }
+
+    function drawRadar(scores){
+      const c = $('radar');
+      const ctx = c.getContext('2d');
+      const rectW = Math.floor(c.getBoundingClientRect().width || 320);
+      const cssSize = Math.max(240, Math.min(360, rectW));
+      const dpr = window.devicePixelRatio || 1;
+      c.width = Math.round(cssSize * dpr);
+      c.height = Math.round(cssSize * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.clearRect(0,0,cssSize,cssSize);
+
+      const cx = cssSize/2, cy = cssSize/2;
+      const R = cssSize*0.34;
+      const keys = ['A','B','C'];
+      const max = 10; // 5 questions *2
+
+      function ang(i){ return (-Math.PI/2) + (i*(Math.PI*2/keys.length)); }
+
+      // web
+      const rings = 5;
+      for(let r=1;r<=rings;r++){
+        const rr = (R*r)/rings;
+        ctx.beginPath();
+        for(let i=0;i<keys.length;i++){
+          const a = ang(i);
+          const x = cx + rr*Math.cos(a);
+          const y = cy + rr*Math.sin(a);
+          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = `rgba(255,255,255,${r%2?0.07:0.11})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      // spokes
+      ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+      for(let i=0;i<keys.length;i++){
+        const a = ang(i);
+        ctx.beginPath();
+        ctx.moveTo(cx,cy);
+        ctx.lineTo(cx+R*Math.cos(a), cy+R*Math.sin(a));
+        ctx.stroke();
+      }
+
+      // data polygon
+      ctx.beginPath();
+      for(let i=0;i<keys.length;i++){
+        const k=keys[i];
+        const v=Math.max(0, Math.min(max, scores[k]||0));
+        const rr=(v/max)*R;
+        const a=ang(i);
+        const x=cx+rr*Math.cos(a);
+        const y=cy+rr*Math.sin(a);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+      ctx.fillStyle='rgba(0,242,255,0.18)';
+      ctx.fill();
+      ctx.strokeStyle='rgba(0,242,255,0.85)';
+      ctx.lineWidth=2;
+      ctx.stroke();
+
+      // labels
+      const labels={A:'任務',B:'反轉',C:'成長'};
+      ctx.fillStyle='rgba(255,255,255,0.88)';
+      ctx.font='bold 13px ui-sans-serif, system-ui';
+      for(let i=0;i<keys.length;i++){
+        const k=keys[i];
+        const a=ang(i);
+        const tx=cx+(R+18)*Math.cos(a);
+        const ty=cy+(R+18)*Math.sin(a);
+        ctx.textAlign = Math.cos(a) > 0.2 ? 'left' : (Math.cos(a) < -0.2 ? 'right' : 'center');
+        ctx.textBaseline='middle';
+        ctx.fillText(labels[k], tx, ty);
+      }
+    }
+
+    // ===== Heatmap =====
+    function renderHeat(list){
+      const wrap = $('qHeat');
+      const counts = {};
+      for(const q of QUESTIONS){
+        counts[q.id] = [0,0,0];
+      }
+      for(const it of list){
+        const a = it.rec.answers || {};
+        for(const q of QUESTIONS){
+          const v = a[q.id];
+          if(typeof v === 'number' && v>=0 && v<=2) counts[q.id][v] += 1;
+        }
+      }
+
+      const total = list.length || 1;
+      wrap.innerHTML = QUESTIONS.map(q=>{
+        const c0=counts[q.id][0], c1=counts[q.id][1], c2=counts[q.id][2];
+        const p0=Math.round(c0/total*100), p1=Math.round(c1/total*100), p2=Math.round(c2/total*100);
+        const opts = OPTION_LABELS[q.id];
+        return `
+          <div style="padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.03)">
+            <div style="font-weight:900;margin-bottom:8px;">${q.title}</div>
+            <div class="stack">
+              <div class="row" style="align-items:center;">
+                <div class="pill dim" style="flex:1;">A｜${opts[0]}</div>
+                <div class="pill" style="justify-content:center; min-width:88px;">${p0}%</div>
+              </div>
+              <div class="row" style="align-items:center;">
+                <div class="pill dim" style="flex:1;">B｜${opts[1]}</div>
+                <div class="pill" style="justify-content:center; min-width:88px;">${p1}%</div>
+              </div>
+              <div class="row" style="align-items:center;">
+                <div class="pill dim" style="flex:1;">C｜${opts[2]}</div>
+                <div class="pill" style="justify-content:center; min-width:88px;">${p2}%</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ===== Table =====
+    function applySearchSort(list){
+      const q = ($('q').value || '').trim().toLowerCase();
+      let out = list;
+      if(q){
+        out = out.filter(({name,rec})=>{
+          const email = (rec.meta && rec.meta.email) || '';
+          const show = (rec.meta && rec.meta.show) || '';
+          return `${name} ${email} ${show}`.toLowerCase().includes(q);
+        });
+      }
+      const sort = $('sort').value;
+      if(sort==='time_desc') out.sort((a,b)=>(b.rec.updatedAt||'').localeCompare(a.rec.updatedAt||''));
+      if(sort==='time_asc') out.sort((a,b)=>(a.rec.updatedAt||'').localeCompare(b.rec.updatedAt||''));
+      if(sort==='name_asc') out.sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
+      if(sort==='name_desc') out.sort((a,b)=>b.name.localeCompare(a.name,'zh-Hant'));
+      return out;
+    }
+
+    function renderKPI(list){
+      const total = list.length;
+      const dist = {A:0,B:0,C:0};
+      let updatedMax = null;
+      for(const it of list){
+        const r = it.rec;
+        const ranked = rank(r.scores || {A:0,B:0,C:0});
+        const top = ranked[0];
+        dist[top.k] += 1;
+        if(!updatedMax || (r.updatedAt||'') > updatedMax) updatedMax = r.updatedAt;
+      }
+      $('totalPill').textContent = `${total} 份`;
+
+      const kpi = $('kpi');
+      const pct = (k)=> total? Math.round(dist[k]/total*100) : 0;
+      kpi.innerHTML = `
+        <div class="box"><div class="n">${total}</div><div class="l">總份數</div></div>
+        <div class="box"><div class="n">${pct('A')}%</div><div class="l">Top 任務</div></div>
+        <div class="box"><div class="n">${pct('B')}%</div><div class="l">Top 反轉</div></div>
+        <div class="box"><div class="n">${pct('C')}%</div><div class="l">Top 成長</div></div>
+      `;
+
+      drawDonut(dist);
+      renderHeat(list);
+
+      return {dist};
+    }
+
+    function renderTable(list){
+      const tbody = $('tbody');
+      const empty = $('empty');
+
+      if(list.length===0){
+        tbody.innerHTML='';
+        empty.style.display='block';
+        return;
+      }
+      empty.style.display='none';
+
+      tbody.innerHTML = list.map(({name,rec})=>{
+        const show = (rec.meta && rec.meta.show) ? escapeHtml(rec.meta.show) : '<span class="muted">—</span>';
+        const label = escapeHtml(topLabel(rec));
+        const t = fmtTime(rec.updatedAt || rec.createdAt);
+        const email = rec.meta && rec.meta.email ? `<div class="muted">${escapeHtml(rec.meta.email)}</div>` : '';
+        return `
+          <tr>
+            <td><div style="font-weight:900;">${escapeHtml(name)}</div>${email}</td>
+            <td><span class="pill">${label}</span></td>
+            <td>${show}</td>
+            <td>${t}</td>
+            <td>
+              <div class="row" style="gap:8px;">
+                <button class="btn" data-act="open" data-name="${escapeAttr(name)}">預覽 / 編輯</button>
+                <button class="btn danger" data-act="del" data-name="${escapeAttr(name)}">刪除</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('button').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const act = btn.getAttribute('data-act');
+          const name = btn.getAttribute('data-name');
+          if(act==='open') openModal(name);
+          if(act==='del') deleteOne(name);
+        });
+      });
+    }
+
+    function escapeHtml(s){
+      return String(s||'')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#39;');
+    }
+    function escapeAttr(s){ return escapeHtml(s).replaceAll('"','&quot;'); }
+
+    // ===== Modal =====
+    let currentName = null;
+
+    function openModal(name){
+      const all = readAll();
+      const rec = all[name];
+      if(!rec){ alert('找不到資料'); return; }
+      currentName = name;
+
+      $('mTitle').textContent = '預覽 / 編輯';
+      $('mName').textContent = name;
+      const email = (rec.meta && rec.meta.email) ? `｜${rec.meta.email}` : '';
+      $('mMeta').innerHTML = `偏好：<b>${escapeHtml(topLabel(rec))}</b><br/>更新：${fmtTime(rec.updatedAt || rec.createdAt)}${email}`;
+
+      // scores pills
+      const s = rec.scores || {A:0,B:0,C:0};
+      $('sA').textContent = `A 任務：${s.A||0}/10`;
+      $('sB').textContent = `B 反轉：${s.B||0}/10`;
+      $('sC').textContent = `C 成長：${s.C||0}/10`;
+
+      drawRadar(s);
+
+      // answers
+      const a = rec.answers || {};
+      $('mAnswers').innerHTML = QUESTIONS.map(q=>{
+        const v = a[q.id];
+        const opts = OPTION_LABELS[q.id];
+        const text = (typeof v==='number' && opts[v]) ? opts[v] : '—';
+        return `
+          <div style="padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.03)">
+            <div style="font-weight:900;margin-bottom:6px;">${q.title}</div>
+            <div class="muted">${escapeHtml(text)}</div>
+          </div>
+        `;
+      }).join('');
+
+      // edit fields
+      $('eName').value = name;
+      $('eEmail').value = (rec.meta && rec.meta.email) || '';
+      $('eShow').value = (rec.meta && rec.meta.show) || '';
+      $('eNote').value = (rec.meta && rec.meta.note) || '';
+
+      $('modal').style.display='flex';
+      // ensure charts fit
+      setTimeout(()=>drawRadar(s), 60);
+    }
+
+    function closeModal(){
+      $('modal').style.display='none';
+      currentName = null;
+    }
+
+    function deleteOne(name){
+      if(!confirm(`確定刪除「${name}」？`)) return;
+      const all = readAll();
+      delete all[name];
+      writeAll(all);
+      refresh();
+      if(currentName===name) closeModal();
+    }
+
+    function saveEdits(){
+      if(!currentName){ alert('未選擇資料'); return; }
+      const all = readAll();
+      const rec = all[currentName];
+      if(!rec){ alert('資料不存在'); return; }
+
+      const newName = ($('eName').value || '').trim();
+      if(!newName){ alert('姓名不可為空'); return; }
+
+      rec.meta = rec.meta || {};
+      rec.meta.email = ($('eEmail').value || '').trim();
+      rec.meta.show  = ($('eShow').value || '').trim();
+      rec.meta.note  = ($('eNote').value || '').trim();
+      rec.updatedAt = nowISO();
+
+      // rename key if needed
+      if(newName !== currentName){
+        // overwrite if exists
+        all[newName] = rec;
+        delete all[currentName];
+        currentName = newName;
+      }else{
+        all[currentName] = rec;
+      }
+      writeAll(all);
+      refresh();
+      openModal(currentName);
+      alert('已儲存');
+    }
+
+    function recalc(){
+      if(!currentName){ alert('未選擇資料'); return; }
+      const all = readAll();
+      const rec = all[currentName];
+      if(!rec){ alert('資料不存在'); return; }
+      rec.scores = computeScores(rec.answers || {});
+      rec.updatedAt = nowISO();
+      all[currentName]=rec;
+      writeAll(all);
+      refresh();
+      openModal(currentName);
+      alert('已重新計算');
+    }
+
+    // ===== Export / Import =====
+    function exportJSON(){
+      const data = JSON.stringify(readAll(), null, 2);
+      const blob = new Blob([data], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'narrative_survey_records.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON(){
+      const input = document.createElement('input');
+      input.type='file';
+      input.accept='application/json';
+      input.onchange = ()=>{
+        const f = input.files && input.files[0];
+        if(!f) return;
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          const txt = String(reader.result||'');
+          const obj = safeParse(txt, null);
+          if(!obj || typeof obj !== 'object'){ alert('JSON 格式不正確'); return; }
+          if(!confirm('確定匯入？同名會覆蓋。')) return;
+          const all = readAll();
+          for(const [k,v] of Object.entries(obj)) all[k]=v;
+          writeAll(all);
+          refresh();
+          alert('匯入完成');
+        };
+        reader.readAsText(f);
+      };
+      input.click();
+    }
+
+    function clearAll(){
+      if(!confirm('確定清空全部資料？此動作無法復原。')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      refresh();
+      closeModal();
+    }
+
+    // ===== Refresh =====
+    function refresh(){
+      const list = applySearchSort(toList(readAll()));
+      renderKPI(list);
+      renderTable(list);
+    }
+
+    // ===== Wire =====
+    $('btnReload').addEventListener('click', refresh);
+    $('btnExport').addEventListener('click', exportJSON);
+    $('btnImport').addEventListener('click', importJSON);
+    $('btnClear').addEventListener('click', clearAll);
+
+    $('q').addEventListener('input', refresh);
+    $('sort').addEventListener('change', refresh);
+
+    $('btnClose').addEventListener('click', closeModal);
+    $('modal').addEventListener('click', (e)=>{ if(e.target === $('modal')) closeModal(); });
+
+    $('btnSave').addEventListener('click', saveEdits);
+    $('btnRecalc').addEventListener('click', recalc);
+    $('btnDeleteOne').addEventListener('click', ()=>{ if(currentName) deleteOne(currentName); });
+
+    window.addEventListener('resize', ()=>{
+      // redraw charts when modal open
+      if($('modal').style.display==='flex' && currentName){
+        const rec = readAll()[currentName];
+        if(rec) drawRadar(rec.scores || {A:0,B:0,C:0});
+      }
+      // redraw donut regardless
+      const list = applySearchSort(toList(readAll()));
+      const dist = {A:0,B:0,C:0};
+      for(const it of list){
+        const top = rank(it.rec.scores||{A:0,B:0,C:0})[0];
+        dist[top.k]+=1;
+      }
+      drawDonut(dist);
+    });
+
+    refresh();
+  })();
+  </script>
+</body>
+</html>
