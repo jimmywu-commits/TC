@@ -1115,9 +1115,75 @@
 
 
 <style id="hide-ddcard-bgs">
-  #ddHorizBg,
-  #ddSquareBg{
+  #ddHorizBg[data-dd-hidden="1"],
+  #ddSquareBg[data-dd-hidden="1"]{
     display:none !important;
+  }
+</style>
+
+
+<style id="ddcard-guide-style">
+  .dd-guide-line{
+    position:absolute;
+    left:0;
+    width:100%;
+    height:1px;
+    background:#ff2b2b;
+    z-index:12;
+    pointer-events:none;
+  }
+  .dd-guide-warning{
+    position:absolute;
+    top:10px;
+    right:10px;
+    z-index:13;
+    pointer-events:none;
+    padding:6px 10px;
+    border-radius:999px;
+    background:rgba(255,43,43,.92);
+    color:#fff;
+    font-size:14px;
+    line-height:1.2;
+    box-shadow:0 4px 12px rgba(0,0,0,.18);
+    opacity:0;
+    transform:translateY(-6px);
+    transition:opacity .18s ease, transform .18s ease;
+  }
+  .dd-guide-warning.show{
+    opacity:1;
+    transform:translateY(0);
+  }
+  .dd-guide-top-h{ top:330px; }
+  .dd-guide-bottom-h{ top:674px; }
+  .dd-guide-top-s{ top:370px; }
+  .dd-guide-bottom-s{ top:674px; }
+
+  .is-exporting .dd-guide-line,
+  .is-exporting .dd-guide-warning{
+    display:none !important;
+  }
+</style>
+
+
+
+<style id="ddcard-product-clean-style">
+  .dd-canvas .dd-product{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:visible !important;
+  }
+  .dd-canvas .dd-product img{
+    position:static !important;
+    left:auto !important;
+    top:auto !important;
+    transform:none !important;
+    width:100% !important;
+    height:100% !important;
+    max-width:100% !important;
+    max-height:100% !important;
+    object-fit:contain !important;
+    display:block !important;
   }
 </style>
 
@@ -1185,7 +1251,10 @@
       <div class="dd-edit-tip">DDCard 畫布內可直接拖曳背景、拖曳商品圖，並從右下角縮放。</div>
       <div class="dd-bg-scale-panel" id="ddBgScaleHoriz"><span class="tag">背景圖尺寸</span><button type="button" data-step="-0.05">–</button><span id="ddBgScaleValHoriz">100%</span><button type="button" data-step="0.05">+</button></div>
       <div id="ddHorizCanvas" class="dd-canvas">
-        <img class="bg" id="ddHorizBg" src="程式檔案/*" alt="DDCard 背景" />
+        <div class="dd-guide-line dd-guide-top-h" aria-hidden="true"></div>
+        <div class="dd-guide-line dd-guide-bottom-h" aria-hidden="true"></div>
+        <div class="dd-guide-warning" id="ddHorizGuideWarning" aria-hidden="true">商品請勿放置在範圍線外</div>
+        <img class="bg" id="ddHorizBg" src="程式檔案/橫BG-DDCARD.png" alt="DDCard 背景" data-dd-hidden="1" />
         <div class="dd-solid-top" id="ddHorizSolidTop"></div>
         <div class="dd-gradient-top" id="ddHorizGradientTop"></div>
         <div class="dd-solid-bottom" id="ddHorizSolidBottom"></div>
@@ -1295,7 +1364,10 @@
       <div class="dd-edit-tip">DDCard 畫布內可直接拖曳背景、拖曳商品圖，並從右下角縮放。</div>
       <div class="dd-bg-scale-panel" id="ddBgScaleSquare"><span class="tag">背景圖尺寸</span><button type="button" data-step="-0.05">–</button><span id="ddBgScaleValSquare">100%</span><button type="button" data-step="0.05">+</button></div>
       <div id="ddSquareCanvas" class="dd-canvas square">
-        <img class="bg" id="ddSquareBg" src="程式檔案/*" alt="DDCard 背景" />
+        <div class="dd-guide-line dd-guide-top-s" aria-hidden="true"></div>
+        <div class="dd-guide-line dd-guide-bottom-s" aria-hidden="true"></div>
+        <div class="dd-guide-warning" id="ddSquareGuideWarning" aria-hidden="true">商品請勿放置在範圍線外</div>
+        <img class="bg" id="ddSquareBg" src="程式檔案/方BG-DDCARD.png" alt="DDCard 背景" data-dd-hidden="1" />
         <div class="dd-solid-top" id="ddSquareSolidTop"></div>
         <div class="dd-gradient-top" id="ddSquareGradientTop"></div>
         <div class="dd-solid-bottom" id="ddSquareSolidBottom"></div>
@@ -2956,7 +3028,7 @@ document.getElementById('eraseCancel').addEventListener('click', ()=>{ document.
   }
 
   const GUIDE_LINES_Y = [34, 318];
-  const GUIDE_GAP = 8;
+  const GUIDE_GAP = 2;
   const CTA_SAFE_MARGIN = 6;
   function getCanvasProductMinX(canvas){
     return canvas && canvas.id === 'square' ? 612 : 547;
@@ -4729,10 +4801,107 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 <script id="ddcard-linked-sync-script">
 (function(){
-  const ddEditState = {
+  const ddEditState = window.ddEditState = {
     ddHoriz: { bg: null, products: {} },
     ddSquare: { bg: null, products: {} }
   };
+
+  const DD_GUIDE_LINES = {
+    ddHoriz: [330, 674],
+    ddSquare: [370, 674]
+  };
+  const DD_GUIDE_GAP = 2;
+
+  function showDdGuideWarning(prefix){
+    const tip = document.getElementById(prefix + 'GuideWarning');
+    if(!tip) return;
+    clearTimeout(tip._hideTimer);
+    tip.classList.add('show');
+    tip._hideTimer = setTimeout(()=>tip.classList.remove('show'), 1400);
+  }
+
+  function getDdRestrictedRects(prefix, canvas, maxW, maxH){
+    const ys = DD_GUIDE_LINES[prefix] || [];
+    return ys.map(y => ({
+      left: 0,
+      top: y - DD_GUIDE_GAP,
+      right: maxW,
+      bottom: y + DD_GUIDE_GAP,
+      type: 'guide-y'
+    }));
+  }
+
+  function ddRectsOverlap(a, b){
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  }
+
+  function ddResolveOverlap(rect, zone, maxW, maxH){
+    const candidates = [];
+    const upPos = zone.top - rect.h;
+    const downPos = zone.bottom;
+
+    if(upPos >= 0){
+      candidates.push({ axis:'y', value:upPos, dist:Math.abs(rect.top - upPos) });
+    }
+    if(downPos <= maxH - rect.h){
+      candidates.push({ axis:'y', value:downPos, dist:Math.abs(rect.top - downPos) });
+    }
+
+    if(!candidates.length) return false;
+    candidates.sort((a,b)=>a.dist-b.dist);
+    const best = candidates[0];
+    if(best.axis === 'y') rect.top = best.value;
+    rect.right = rect.left + rect.w;
+    rect.bottom = rect.top + rect.h;
+    return true;
+  }
+
+  function avoidDdRestrictedAreas(prefix, box, state){
+    const canvas = document.getElementById(prefix + 'Canvas');
+    if(!canvas || !box || !state) return;
+
+    const maxW = canvas.clientWidth || 531;
+    const maxH = canvas.clientHeight || 792;
+
+    const rect = {
+      left: state.left != null ? state.left : (parseFloat(box.style.left) || 0),
+      top: state.top != null ? state.top : (parseFloat(box.style.top) || 0),
+      w: state.width != null ? state.width : (parseFloat(box.style.width) || box.offsetWidth || 0),
+      h: state.height != null ? state.height : (parseFloat(box.style.height) || box.offsetHeight || 0)
+    };
+    rect.right = rect.left + rect.w;
+    rect.bottom = rect.top + rect.h;
+
+    rect.left = Math.max(0, Math.min(rect.left, maxW - rect.w));
+    rect.top = Math.max(0, Math.min(rect.top, maxH - rect.h));
+    rect.right = rect.left + rect.w;
+    rect.bottom = rect.top + rect.h;
+
+    const zones = getDdRestrictedRects(prefix, canvas, maxW, maxH);
+    let bumped = false;
+    for(let i=0; i<12; i++){
+      let moved = false;
+      for(const zone of zones){
+        if(ddRectsOverlap(rect, zone)){
+          if(ddResolveOverlap(rect, zone, maxW, maxH)){
+            moved = true;
+            bumped = true;
+          }
+        }
+      }
+      if(!moved) break;
+    }
+
+    rect.left = Math.max(0, Math.min(rect.left, maxW - rect.w));
+    rect.top = Math.max(0, Math.min(rect.top, maxH - rect.h));
+
+    state.left = rect.left;
+    state.top = rect.top;
+    state.width = rect.w;
+    state.height = rect.h;
+
+    if(bumped) showDdGuideWarning(prefix);
+  }
 
   function getPlainText(el){
     if(!el) return '';
@@ -4945,6 +5114,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 
   function applyProductState(box, state){
+    const prefix = box && box.closest('.dd-canvas.square') ? 'ddSquare' : 'ddHoriz';
+    avoidDdRestrictedAreas(prefix, box, state);
     if(state.left != null) box.style.left = state.left + 'px';
     if(state.top != null) box.style.top = state.top + 'px';
     if(state.width != null) box.style.width = state.width + 'px';
@@ -4976,16 +5147,22 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const dx = e.clientX - sx;
       const dy = e.clientY - sy;
       const state = ddEditState[prefix].products[key] || {};
+
       if(dragging){
         state.left = sl + dx;
         state.top = st + dy;
+        state.width = parseFloat(box.style.width) || box.offsetWidth || sw;
+        state.height = parseFloat(box.style.height) || box.offsetHeight || sh;
       }else if(resizing){
         const ratio = sw / Math.max(1, sh);
         let nw = Math.max(60, sw + dx);
         let nh = nw / ratio;
+        state.left = parseFloat(box.style.left) || 0;
+        state.top = parseFloat(box.style.top) || 0;
         state.width = nw;
         state.height = nh;
       }
+
       ddEditState[prefix].products[key] = state;
       applyProductState(box, state);
     });
@@ -5180,6 +5357,777 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 
 
+
+
+
+<script id="ddcard-bg-sync-fix">
+(function(){
+  function isUploadedLike(src){
+    return /^data:|^blob:/.test(src || '');
+  }
+
+  function isBuiltInBg(src){
+    return /程式檔案\//.test(src || '');
+  }
+
+  function syncDdBgFromHbn(kind){
+    const isHoriz = kind === 'horiz';
+    const srcEl = document.getElementById(isHoriz ? 'bgH' : 'bgS');
+    const ddEl  = document.getElementById(isHoriz ? 'ddHorizBg' : 'ddSquareBg');
+    const stateKey = isHoriz ? 'ddHoriz' : 'ddSquare';
+    if(!srcEl || !ddEl) return;
+
+    const src = srcEl.getAttribute('src') || srcEl.src || '';
+    if(!src) return;
+
+    // copy source
+    if(ddEl.getAttribute('src') !== src){
+      ddEl.setAttribute('src', src);
+    }
+
+    // initial rule:
+    // - built-in default HBN bg => DDCard bg hidden
+    // - uploaded / changed bg => DDCard bg visible
+    if(isUploadedLike(src)){
+      ddEl.removeAttribute('data-dd-hidden');
+      ddEl.style.removeProperty('display');
+      ddEl.style.removeProperty('visibility');
+      ddEl.style.removeProperty('opacity');
+    }else if(isBuiltInBg(src)){
+      // keep hidden only for built-in defaults
+      ddEl.setAttribute('data-dd-hidden', '1');
+    }else{
+      ddEl.removeAttribute('data-dd-hidden');
+      ddEl.style.removeProperty('display');
+      ddEl.style.removeProperty('visibility');
+      ddEl.style.removeProperty('opacity');
+    }
+
+    // reset DDCard bg state so linked canvas rebuilds with latest image
+    if(window.ddEditState && window.ddEditState[stateKey]){
+      window.ddEditState[stateKey].bg = null;
+    }
+
+    if(window.syncDdLinkedCanvases){
+      try{ window.syncDdLinkedCanvases(); }catch(e){}
+    }
+  }
+
+  function bindDdBgSync(){
+    const bgH = document.getElementById('bgH');
+    const bgS = document.getElementById('bgS');
+    const inputH = document.getElementById('bg-horiz');
+    const inputS = document.getElementById('bg-square');
+
+    if(bgH && !bgH.dataset.ddSyncBound){
+      bgH.dataset.ddSyncBound = '1';
+      bgH.addEventListener('load', ()=>syncDdBgFromHbn('horiz'));
+      const moH = new MutationObserver(()=>syncDdBgFromHbn('horiz'));
+      moH.observe(bgH, { attributes:true, attributeFilter:['src'] });
+    }
+
+    if(bgS && !bgS.dataset.ddSyncBound){
+      bgS.dataset.ddSyncBound = '1';
+      bgS.addEventListener('load', ()=>syncDdBgFromHbn('square'));
+      const moS = new MutationObserver(()=>syncDdBgFromHbn('square'));
+      moS.observe(bgS, { attributes:true, attributeFilter:['src'] });
+    }
+
+    if(inputH && !inputH.dataset.ddSyncBound){
+      inputH.dataset.ddSyncBound = '1';
+      inputH.addEventListener('change', ()=>setTimeout(()=>syncDdBgFromHbn('horiz'), 120));
+    }
+
+    if(inputS && !inputS.dataset.ddSyncBound){
+      inputS.dataset.ddSyncBound = '1';
+      inputS.addEventListener('change', ()=>setTimeout(()=>syncDdBgFromHbn('square'), 120));
+    }
+
+    // initial sync
+    syncDdBgFromHbn('horiz');
+    syncDdBgFromHbn('square');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bindDdBgSync);
+  }else{
+    bindDdBgSync();
+  }
+})();
+</script>
+
+
+
+<script id="ddcard-download">
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btnH = document.createElement('button');
+  btnH.textContent = '下載 DDCard（橫）';
+  btnH.style.marginLeft = '8px';
+  document.getElementById('dl-h')?.parentElement?.appendChild(btnH);
+
+  const btnS = document.createElement('button');
+  btnS.textContent = '下載 DDCard（方）';
+  btnS.style.marginLeft = '8px';
+  document.getElementById('dl-s')?.parentElement?.appendChild(btnS);
+
+  btnH.addEventListener('click', ()=>{
+    if(window.downloadJpgFor) downloadJpgFor('ddHorizCanvas','bg-color-h','ddcard-h.jpg');
+  });
+
+  btnS.addEventListener('click', ()=>{
+    if(window.downloadJpgFor) downloadJpgFor('ddSquareCanvas','bg-color-s','ddcard-s.jpg');
+  });
+});
+</script>
+
+
+<script id="ddcard-hbn-parity-patch">
+(function(){
+  const DD_LIMITS = {
+    ddHoriz: [330, 674],
+    ddSquare: [370, 674]
+  };
+  const DD_GAP = 2;
+
+  function ddShowWarning(prefix){
+    const tip = document.getElementById(prefix + 'GuideWarning');
+    if(!tip) return;
+    clearTimeout(tip._hideTimer);
+    tip.classList.add('show');
+    tip._hideTimer = setTimeout(()=>tip.classList.remove('show'), 1400);
+  }
+
+  function ddZones(prefix, maxW, maxH){
+    const ys = DD_LIMITS[prefix] || [];
+    return ys.map(y => ({
+      left: 0,
+      top: y - DD_GAP,
+      right: maxW,
+      bottom: y + DD_GAP,
+      type: 'guide-y'
+    }));
+  }
+
+  function overlap(a, b){
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  }
+
+  function resolve(rect, zone, maxW, maxH){
+    const candidates = [];
+    const upPos = zone.top - rect.h;
+    const downPos = zone.bottom;
+
+    if(upPos >= 0){
+      candidates.push({ axis:'y', value:upPos, dist:Math.abs(rect.top - upPos) });
+    }
+    if(downPos <= maxH - rect.h){
+      candidates.push({ axis:'y', value:downPos, dist:Math.abs(rect.top - downPos) });
+    }
+
+    if(!candidates.length) return false;
+    candidates.sort((a,b)=>a.dist-b.dist);
+    const best = candidates[0];
+    rect.top = best.value;
+    rect.right = rect.left + rect.w;
+    rect.bottom = rect.top + rect.h;
+    return true;
+  }
+
+  function applyHbnLikeDdBounds(prefix, box, state){
+    const canvas = document.getElementById(prefix + 'Canvas');
+    if(!canvas || !box || !state) return;
+    const maxW = canvas.clientWidth || 531;
+    const maxH = canvas.clientHeight || 792;
+
+    const rect = {
+      left: state.left != null ? state.left : (parseFloat(box.style.left) || 0),
+      top: state.top != null ? state.top : (parseFloat(box.style.top) || 0),
+      w: state.width != null ? state.width : (parseFloat(box.style.width) || box.offsetWidth || 0),
+      h: state.height != null ? state.height : (parseFloat(box.style.height) || box.offsetHeight || 0)
+    };
+    rect.right = rect.left + rect.w;
+    rect.bottom = rect.top + rect.h;
+
+    rect.left = Math.max(0, Math.min(rect.left, maxW - rect.w));
+    rect.top = Math.max(0, Math.min(rect.top, maxH - rect.h));
+    rect.right = rect.left + rect.w;
+    rect.bottom = rect.top + rect.h;
+
+    const zones = ddZones(prefix, maxW, maxH);
+    let bumped = false;
+    for(let i=0; i<12; i++){
+      let moved = false;
+      for(const zone of zones){
+        if(overlap(rect, zone)){
+          if(resolve(rect, zone, maxW, maxH)){
+            moved = true;
+            bumped = true;
+          }
+        }
+      }
+      if(!moved) break;
+    }
+
+    rect.left = Math.max(0, Math.min(rect.left, maxW - rect.w));
+    rect.top = Math.max(0, Math.min(rect.top, maxH - rect.h));
+
+    state.left = rect.left;
+    state.top = rect.top;
+    state.width = rect.w;
+    state.height = rect.h;
+
+    if(bumped) ddShowWarning(prefix);
+  }
+
+  function patchDdEditors(){
+    ['ddHoriz','ddSquare'].forEach(prefix => {
+      const root = document.getElementById(prefix + 'Products');
+      if(!root || root.dataset.hbnParityBound === '1') return;
+      root.dataset.hbnParityBound = '1';
+
+      const originalApply = window.applyProductState;
+
+      // Patch each product box after it appears
+      const mo = new MutationObserver(() => {
+        root.querySelectorAll('.dd-product').forEach(box => {
+          if(box.dataset.hbnParityBoxBound === '1') return;
+          box.dataset.hbnParityBoxBound = '1';
+
+          let dragging = false, resizing = false;
+          let sx = 0, sy = 0, sl = 0, st = 0, sw = 0, sh = 0;
+
+          box.addEventListener('mousedown', (e)=>{
+            const rect = box.getBoundingClientRect();
+            const nearHandle = (e.clientX >= rect.right - 18) && (e.clientY >= rect.bottom - 18);
+            resizing = nearHandle;
+            dragging = !nearHandle;
+            sx = e.clientX; sy = e.clientY;
+            sl = parseFloat(box.style.left) || 0;
+            st = parseFloat(box.style.top) || 0;
+            sw = parseFloat(box.style.width) || box.offsetWidth;
+            sh = parseFloat(box.style.height) || box.offsetHeight;
+            e.preventDefault();
+            e.stopPropagation();
+          }, true);
+
+          window.addEventListener('mousemove', (e)=>{
+            if(!dragging && !resizing) return;
+            const key = box.dataset.key;
+            const state = (window.ddEditState && window.ddEditState[prefix] && window.ddEditState[prefix].products[key]) || {};
+            const dx = e.clientX - sx;
+            const dy = e.clientY - sy;
+
+            if(dragging){
+              state.left = sl + dx;
+              state.top = st + dy;
+              state.width = parseFloat(box.style.width) || box.offsetWidth || sw;
+              state.height = parseFloat(box.style.height) || box.offsetHeight || sh;
+            }else if(resizing){
+              const ratio = sw / Math.max(1, sh);
+              let nw = Math.max(60, sw + Math.max(dx, dy));
+              let nh = nw / ratio;
+              state.left = parseFloat(box.style.left) || 0;
+              state.top = parseFloat(box.style.top) || 0;
+              state.width = nw;
+              state.height = nh;
+            }
+
+            applyHbnLikeDdBounds(prefix, box, state);
+            box.style.left = state.left + 'px';
+            box.style.top = state.top + 'px';
+            box.style.width = state.width + 'px';
+            box.style.height = state.height + 'px';
+            if(window.ddEditState && window.ddEditState[prefix]){
+              window.ddEditState[prefix].products[key] = state;
+            }
+          }, true);
+
+          window.addEventListener('mouseup', ()=>{
+            dragging = false;
+            resizing = false;
+          }, true);
+        });
+      });
+      mo.observe(root, { childList:true, subtree:true });
+    });
+  }
+
+  function patchDdDownload(){
+    if(window.__ddDownloadPatched) return;
+    window.__ddDownloadPatched = true;
+
+    const original = window.downloadJpgFor;
+    if(typeof original !== 'function') return;
+
+    window.downloadJpgFor = async function(canvasId, bgColorInputId, filename){
+      const isDd = canvasId === 'ddHorizCanvas' || canvasId === 'ddSquareCanvas';
+      if(!isDd) return original(canvasId, bgColorInputId, filename);
+
+      const node = document.getElementById(canvasId);
+      if(!node) return original(canvasId, bgColorInputId, filename);
+
+      const imgs = Array.from(node.querySelectorAll('.dd-product img'));
+      const previous = imgs.map(img => ({
+        img,
+        width: img.style.width,
+        height: img.style.height,
+        maxWidth: img.style.maxWidth,
+        maxHeight: img.style.maxHeight,
+        objectFit: img.style.objectFit
+      }));
+
+      // Preserve on-canvas box size; do not stretch image to fill the box during export
+      imgs.forEach(img => {
+        img.style.width = 'auto';
+        img.style.height = 'auto';
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.objectFit = 'contain';
+      });
+
+      try{
+        return await original(canvasId, bgColorInputId, filename);
+      }finally{
+        previous.forEach(x => {
+          x.img.style.width = x.width;
+          x.img.style.height = x.height;
+          x.img.style.maxWidth = x.maxWidth;
+          x.img.style.maxHeight = x.maxHeight;
+          x.img.style.objectFit = x.objectFit;
+        });
+      }
+    };
+  }
+
+  function init(){
+    patchDdEditors();
+    patchDdDownload();
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
+})();
+</script>
+
+
+<script id="hbn-export-product-ratio-fix">
+(function(){
+  if(window.__hbnExportRatioPatched) return;
+  window.__hbnExportRatioPatched = true;
+
+  const original = window.downloadJpgFor;
+  if(typeof original !== 'function') return;
+
+  window.downloadJpgFor = async function(canvasId, bgColorInputId, filename){
+    const isHbn = canvasId === 'horiz' || canvasId === 'square' || canvasId === 'pcH' || canvasId === 'pcS';
+    if(!isHbn){
+      return original(canvasId, bgColorInputId, filename);
+    }
+
+    const node = document.getElementById(canvasId);
+    if(!node){
+      return original(canvasId, bgColorInputId, filename);
+    }
+
+    const imgs = Array.from(node.querySelectorAll('.editor-item:not(.editor-bg) img'));
+    const prev = imgs.map(img => ({
+      img,
+      width: img.style.width,
+      height: img.style.height,
+      maxWidth: img.style.maxWidth,
+      maxHeight: img.style.maxHeight,
+      objectFit: img.style.objectFit,
+      left: img.style.left,
+      top: img.style.top,
+      position: img.style.position
+    }));
+
+    imgs.forEach(img => {
+      img.style.width = 'auto';
+      img.style.height = 'auto';
+      img.style.maxWidth = '100%';
+      img.style.maxHeight = '100%';
+      img.style.objectFit = 'contain';
+    });
+
+    try{
+      return await original(canvasId, bgColorInputId, filename);
+    }finally{
+      prev.forEach(x => {
+        x.img.style.width = x.width;
+        x.img.style.height = x.height;
+        x.img.style.maxWidth = x.maxWidth;
+        x.img.style.maxHeight = x.maxHeight;
+        x.img.style.objectFit = x.objectFit;
+        x.img.style.left = x.left;
+        x.img.style.top = x.top;
+        x.img.style.position = x.position;
+      });
+    }
+  };
+})();
+</script>
+
+
+
+
+
+<script id="ddcard-hide-resize-icon-export">
+(function(){
+  if(window.__ddcardIconExportPatched) return;
+  window.__ddcardIconExportPatched = true;
+
+  const original = window.downloadJpgFor;
+  if(typeof original !== 'function') return;
+
+  window.downloadJpgFor = async function(canvasId, bgColorInputId, filename){
+    const isDd = canvasId === 'ddHorizCanvas' || canvasId === 'ddSquareCanvas';
+    if(!isDd){
+      return original(canvasId, bgColorInputId, filename);
+    }
+
+    const node = document.getElementById(canvasId);
+    if(!node){
+      return original(canvasId, bgColorInputId, filename);
+    }
+
+    // hide resize pseudo icon via class toggle
+    node.classList.add('hide-dd-icons');
+
+    try{
+      return await original(canvasId, bgColorInputId, filename);
+    }finally{
+      node.classList.remove('hide-dd-icons');
+    }
+  };
+})();
+</script>
+
+<style id="ddcard-hide-resize-icon-style">
+.hide-dd-icons .dd-product::after{
+  display:none !important;
+}
+</style>
+
+
+<script id="ddcard-underlay-and-export-fix">
+(function(){
+  function applyDdColor(prefix, hex){
+    if(!hex) return;
+    const solidTop = document.getElementById(prefix + 'SolidTop');
+    const gradTop = document.getElementById(prefix + 'GradientTop');
+    const solidBottom = document.getElementById(prefix + 'SolidBottom');
+    const gradBottom = document.getElementById(prefix + 'GradientBottom');
+    const canvas = document.getElementById(prefix + 'Canvas');
+
+    if(canvas) canvas.style.backgroundColor = hex;
+    if(solidTop) solidTop.style.background = hex;
+    if(solidBottom) solidBottom.style.background = hex;
+    if(gradTop) gradTop.style.background = 'linear-gradient(to bottom, ' + hex + ' 0%, rgba(0,0,0,0) 100%)';
+    if(gradBottom) gradBottom.style.background = 'linear-gradient(to top, ' + hex + ' 0%, rgba(0,0,0,0) 100%)';
+  }
+
+  function syncDdUnderlaysFromInputs(){
+    const h = document.getElementById('bg-color-h')?.value || '';
+    const s = document.getElementById('bg-color-s')?.value || '';
+    applyDdColor('ddHoriz', h);
+    applyDdColor('ddSquare', s);
+  }
+
+  function bindDdUnderlaySync(){
+    ['bg-color-h','bg-color-s'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el || el.dataset.ddUnderlayBound === '1') return;
+      el.dataset.ddUnderlayBound = '1';
+      el.addEventListener('input', syncDdUnderlaysFromInputs);
+      el.addEventListener('change', syncDdUnderlaysFromInputs);
+    });
+
+    ['bgH','bgS'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el || el.dataset.ddUnderlayLoadBound === '1') return;
+      el.dataset.ddUnderlayLoadBound = '1';
+      el.addEventListener('load', ()=>setTimeout(syncDdUnderlaysFromInputs, 60));
+    });
+
+    syncDdUnderlaysFromInputs();
+    setTimeout(syncDdUnderlaysFromInputs, 200);
+  }
+
+  function patchDdDownload(){
+    if(window.__ddCleanExportPatched) return;
+    window.__ddCleanExportPatched = true;
+
+    const original = window.downloadJpgFor;
+    if(typeof original !== 'function') return;
+
+    window.downloadJpgFor = async function(canvasId, bgColorInputId, filename){
+      const isDd = canvasId === 'ddHorizCanvas' || canvasId === 'ddSquareCanvas';
+      if(!isDd){
+        return original(canvasId, bgColorInputId, filename);
+      }
+
+      const node = document.getElementById(canvasId);
+      if(!node){
+        return original(canvasId, bgColorInputId, filename);
+      }
+
+      // Keep product images exactly as currently rendered on canvas.
+      const imgs = Array.from(node.querySelectorAll('.dd-product img'));
+      const prev = imgs.map(img => ({
+        img,
+        width: img.style.width,
+        height: img.style.height,
+        maxWidth: img.style.maxWidth,
+        maxHeight: img.style.maxHeight,
+        objectFit: img.style.objectFit,
+        position: img.style.position,
+        left: img.style.left,
+        top: img.style.top,
+        transform: img.style.transform
+      }));
+
+      imgs.forEach(img => {
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.objectFit = 'contain';
+        img.style.position = 'static';
+        img.style.left = 'auto';
+        img.style.top = 'auto';
+        img.style.transform = 'none';
+      });
+
+      try{
+        return await original(canvasId, bgColorInputId, filename);
+      }finally{
+        prev.forEach(x => {
+          x.img.style.width = x.width;
+          x.img.style.height = x.height;
+          x.img.style.maxWidth = x.maxWidth;
+          x.img.style.maxHeight = x.maxHeight;
+          x.img.style.objectFit = x.objectFit;
+          x.img.style.position = x.position;
+          x.img.style.left = x.left;
+          x.img.style.top = x.top;
+          x.img.style.transform = x.transform;
+        });
+      }
+    };
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ()=>{
+      bindDdUnderlaySync();
+      patchDdDownload();
+    });
+  }else{
+    bindDdUnderlaySync();
+    patchDdDownload();
+  }
+})();
+</script>
+
+
+<script id="ddcard-gradient-and-product-fix-v2">
+(function(){
+  function fitContain(slotW, slotH, imgW, imgH){
+    if(!imgW || !imgH) return { width: slotW, height: slotH, leftOffset: 0, topOffset: 0 };
+    const r = imgW / imgH;
+    const sr = slotW / slotH;
+    let w, h;
+    if(r > sr){
+      w = slotW;
+      h = w / r;
+    }else{
+      h = slotH;
+      w = h * r;
+    }
+    return {
+      width: w,
+      height: h,
+      leftOffset: (slotW - w) / 2,
+      topOffset: (slotH - h) / 2
+    };
+  }
+
+  function applyDdUnderlayColor(prefix, color){
+    if(!color) return;
+    const canvas = document.getElementById(prefix + 'Canvas');
+    const solidTop = document.getElementById(prefix + 'SolidTop');
+    const gradTop = document.getElementById(prefix + 'GradientTop');
+    const solidBottom = document.getElementById(prefix + 'SolidBottom');
+    const gradBottom = document.getElementById(prefix + 'GradientBottom');
+
+    if(canvas) canvas.style.backgroundColor = color;
+    if(solidTop) solidTop.style.backgroundColor = color;
+    if(solidBottom) solidBottom.style.backgroundColor = color;
+    if(gradTop) gradTop.style.background = 'linear-gradient(to bottom, ' + color + ' 0%, rgba(0,0,0,0) 100%)';
+    if(gradBottom) gradBottom.style.background = 'linear-gradient(to top, ' + color + ' 0%, rgba(0,0,0,0) 100%)';
+  }
+
+  function syncDdUnderlaysStrict(){
+    const h = document.getElementById('bg-color-h')?.value || '';
+    const s = document.getElementById('bg-color-s')?.value || '';
+    if(h) applyDdUnderlayColor('ddHoriz', h);
+    if(s) applyDdUnderlayColor('ddSquare', s);
+  }
+
+  function patchRenderProducts(){
+    const script = document.getElementById('ddcard-linked-sync-script');
+    if(!script || window.__ddRenderProductsPatched) return;
+    window.__ddRenderProductsPatched = true;
+
+    if(typeof window.syncDdLinkedCanvases === 'function'){
+      const originalSync = window.syncDdLinkedCanvases;
+      window.syncDdLinkedCanvases = function(){
+        syncDdUnderlaysStrict();
+        return originalSync.apply(this, arguments);
+      };
+    }
+
+    ['ddHorizProducts','ddSquareProducts'].forEach(id=>{
+      const root = document.getElementById(id);
+      if(!root || root.dataset.ratioPatchBound === '1') return;
+      root.dataset.ratioPatchBound = '1';
+
+      const mo = new MutationObserver(()=>{
+        root.querySelectorAll('.dd-product').forEach(box=>{
+          if(box.dataset.ratioSized === '1') return;
+          const img = box.querySelector('img');
+          if(!img) return;
+
+          const apply = ()=>{
+            const stateKey = box.closest('.dd-canvas.square') ? 'ddSquare' : 'ddHoriz';
+            const slotState = window.ddEditState?.[stateKey]?.products?.[box.dataset.key];
+            if(!slotState) return;
+
+            const fitted = fitContain(slotState.width, slotState.height, img.naturalWidth, img.naturalHeight);
+            const newLeft = slotState.left + fitted.leftOffset;
+            const newTop = slotState.top + fitted.topOffset;
+
+            slotState.left = newLeft;
+            slotState.top = newTop;
+            slotState.width = fitted.width;
+            slotState.height = fitted.height;
+
+            box.style.left = newLeft + 'px';
+            box.style.top = newTop + 'px';
+            box.style.width = fitted.width + 'px';
+            box.style.height = fitted.height + 'px';
+            box.dataset.ratioSized = '1';
+          };
+
+          if(img.complete && img.naturalWidth){
+            apply();
+          }else{
+            img.addEventListener('load', apply, { once:true });
+          }
+        });
+      });
+      mo.observe(root, { childList:true, subtree:true });
+    });
+  }
+
+  function patchDdDownload(){
+    if(window.__ddDownloadGradientPatched) return;
+    window.__ddDownloadGradientPatched = true;
+
+    const original = window.downloadJpgFor;
+    if(typeof original !== 'function') return;
+
+    window.downloadJpgFor = async function(canvasId, bgColorInputId, filename){
+      const isDd = canvasId === 'ddHorizCanvas' || canvasId === 'ddSquareCanvas';
+      if(!isDd){
+        return original(canvasId, bgColorInputId, filename);
+      }
+
+      syncDdUnderlaysStrict();
+
+      const node = document.getElementById(canvasId);
+      if(!node){
+        return original(canvasId, bgColorInputId, filename);
+      }
+
+      const imgs = Array.from(node.querySelectorAll('.dd-product img'));
+      const prev = imgs.map(img => ({
+        img,
+        width: img.style.width,
+        height: img.style.height,
+        maxWidth: img.style.maxWidth,
+        maxHeight: img.style.maxHeight,
+        objectFit: img.style.objectFit,
+        position: img.style.position,
+        left: img.style.left,
+        top: img.style.top,
+        transform: img.style.transform
+      }));
+
+      imgs.forEach(img => {
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.objectFit = 'contain';
+        img.style.position = 'static';
+        img.style.left = 'auto';
+        img.style.top = 'auto';
+        img.style.transform = 'none';
+      });
+
+      try{
+        return await original(canvasId, bgColorInputId, filename);
+      }finally{
+        prev.forEach(x => {
+          x.img.style.width = x.width;
+          x.img.style.height = x.height;
+          x.img.style.maxWidth = x.maxWidth;
+          x.img.style.maxHeight = x.maxHeight;
+          x.img.style.objectFit = x.objectFit;
+          x.img.style.position = x.position;
+          x.img.style.left = x.left;
+          x.img.style.top = x.top;
+          x.img.style.transform = x.transform;
+        });
+      }
+    };
+  }
+
+  function bindColorInputs(){
+    ['bg-color-h','bg-color-s'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el || el.dataset.ddColorStrictBound === '1') return;
+      el.dataset.ddColorStrictBound = '1';
+      el.addEventListener('input', syncDdUnderlaysStrict);
+      el.addEventListener('change', syncDdUnderlaysStrict);
+    });
+    ['bgH','bgS'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el || el.dataset.ddColorLoadStrictBound === '1') return;
+      el.dataset.ddColorLoadStrictBound = '1';
+      el.addEventListener('load', ()=>setTimeout(syncDdUnderlaysStrict, 80));
+    });
+  }
+
+  function init(){
+    bindColorInputs();
+    syncDdUnderlaysStrict();
+    patchRenderProducts();
+    patchDdDownload();
+    setTimeout(syncDdUnderlaysStrict, 200);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
+})();
+</script>
 
 </body>
 </html>
