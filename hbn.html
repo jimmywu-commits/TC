@@ -5813,53 +5813,92 @@ document.addEventListener('DOMContentLoaded', ()=>{
 </style>
 
 
-<script id="ddcard-underlay-and-export-fix">
+
+<script id="ddcard-final-visual-fix">
 (function(){
-  function applyDdColor(prefix, hex){
+  function hexToRgba(hex, alpha){
+    const h = (hex || '').replace('#','').trim();
+    const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    const r = parseInt(full.slice(0,2), 16) || 0;
+    const g = parseInt(full.slice(2,4), 16) || 0;
+    const b = parseInt(full.slice(4,6), 16) || 0;
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  }
+
+  function applyDdUnderlay(prefix, hex){
     if(!hex) return;
+    const canvas = document.getElementById(prefix + 'Canvas');
     const solidTop = document.getElementById(prefix + 'SolidTop');
     const gradTop = document.getElementById(prefix + 'GradientTop');
     const solidBottom = document.getElementById(prefix + 'SolidBottom');
     const gradBottom = document.getElementById(prefix + 'GradientBottom');
-    const canvas = document.getElementById(prefix + 'Canvas');
 
     if(canvas) canvas.style.backgroundColor = hex;
-    if(solidTop) solidTop.style.background = hex;
-    if(solidBottom) solidBottom.style.background = hex;
-    if(gradTop) gradTop.style.background = 'linear-gradient(to bottom, ' + hex + ' 0%, rgba(0,0,0,0) 100%)';
-    if(gradBottom) gradBottom.style.background = 'linear-gradient(to top, ' + hex + ' 0%, rgba(0,0,0,0) 100%)';
+    if(solidTop){
+      solidTop.style.background = hex;
+      solidTop.style.opacity = '1';
+      solidTop.style.mixBlendMode = 'normal';
+    }
+    if(solidBottom){
+      solidBottom.style.background = hex;
+      solidBottom.style.opacity = '1';
+      solidBottom.style.mixBlendMode = 'normal';
+    }
+    if(gradTop){
+      gradTop.style.background =
+        'linear-gradient(to bottom, ' +
+        hex + ' 0%, ' +
+        hexToRgba(hex, 0.96) + ' 35%, ' +
+        hexToRgba(hex, 0.82) + ' 60%, ' +
+        hexToRgba(hex, 0.55) + ' 82%, ' +
+        hexToRgba(hex, 0.00) + ' 100%)';
+      gradTop.style.opacity = '1';
+      gradTop.style.mixBlendMode = 'normal';
+    }
+    if(gradBottom){
+      gradBottom.style.background =
+        'linear-gradient(to top, ' +
+        hex + ' 0%, ' +
+        hexToRgba(hex, 0.96) + ' 35%, ' +
+        hexToRgba(hex, 0.82) + ' 60%, ' +
+        hexToRgba(hex, 0.55) + ' 82%, ' +
+        hexToRgba(hex, 0.00) + ' 100%)';
+      gradBottom.style.opacity = '1';
+      gradBottom.style.mixBlendMode = 'normal';
+    }
   }
 
-  function syncDdUnderlaysFromInputs(){
+  function syncDdUnderlays(){
     const h = document.getElementById('bg-color-h')?.value || '';
     const s = document.getElementById('bg-color-s')?.value || '';
-    applyDdColor('ddHoriz', h);
-    applyDdColor('ddSquare', s);
+    if(h) applyDdUnderlay('ddHoriz', h);
+    if(s) applyDdUnderlay('ddSquare', s);
   }
 
-  function bindDdUnderlaySync(){
-    ['bg-color-h','bg-color-s'].forEach(id=>{
+  function bindDdUnderlays(){
+    ['bg-color-h','bg-color-s'].forEach(id => {
       const el = document.getElementById(id);
-      if(!el || el.dataset.ddUnderlayBound === '1') return;
-      el.dataset.ddUnderlayBound = '1';
-      el.addEventListener('input', syncDdUnderlaysFromInputs);
-      el.addEventListener('change', syncDdUnderlaysFromInputs);
+      if(!el || el.dataset.ddFinalUnderlayBound === '1') return;
+      el.dataset.ddFinalUnderlayBound = '1';
+      el.addEventListener('input', syncDdUnderlays);
+      el.addEventListener('change', syncDdUnderlays);
     });
 
-    ['bgH','bgS'].forEach(id=>{
+    ['bgH','bgS'].forEach(id => {
       const el = document.getElementById(id);
-      if(!el || el.dataset.ddUnderlayLoadBound === '1') return;
-      el.dataset.ddUnderlayLoadBound = '1';
-      el.addEventListener('load', ()=>setTimeout(syncDdUnderlaysFromInputs, 60));
+      if(!el || el.dataset.ddFinalUnderlayLoadBound === '1') return;
+      el.dataset.ddFinalUnderlayLoadBound = '1';
+      el.addEventListener('load', () => setTimeout(syncDdUnderlays, 80));
     });
 
-    syncDdUnderlaysFromInputs();
-    setTimeout(syncDdUnderlaysFromInputs, 200);
+    syncDdUnderlays();
+    setTimeout(syncDdUnderlays, 180);
+    setTimeout(syncDdUnderlays, 500);
   }
 
   function patchDdDownload(){
-    if(window.__ddCleanExportPatched) return;
-    window.__ddCleanExportPatched = true;
+    if(window.__ddFinalDownloadPatched) return;
+    window.__ddFinalDownloadPatched = true;
 
     const original = window.downloadJpgFor;
     if(typeof original !== 'function') return;
@@ -5870,255 +5909,174 @@ document.addEventListener('DOMContentLoaded', ()=>{
         return original(canvasId, bgColorInputId, filename);
       }
 
+      syncDdUnderlays();
+
       const node = document.getElementById(canvasId);
       if(!node){
         return original(canvasId, bgColorInputId, filename);
       }
 
-      // Keep product images exactly as currently rendered on canvas.
-      const imgs = Array.from(node.querySelectorAll('.dd-product img'));
-      const prev = imgs.map(img => ({
-        img,
-        width: img.style.width,
-        height: img.style.height,
-        maxWidth: img.style.maxWidth,
-        maxHeight: img.style.maxHeight,
-        objectFit: img.style.objectFit,
-        position: img.style.position,
-        left: img.style.left,
-        top: img.style.top,
-        transform: img.style.transform
-      }));
+      // keep resize icon hidden on export
+      node.classList.add('hide-dd-icons');
 
-      imgs.forEach(img => {
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.maxWidth = '100%';
-        img.style.maxHeight = '100%';
-        img.style.objectFit = 'contain';
-        img.style.position = 'static';
-        img.style.left = 'auto';
-        img.style.top = 'auto';
-        img.style.transform = 'none';
-      });
-
+      // keep current on-canvas DDCard product rendering; do not add extra scaling logic
       try{
         return await original(canvasId, bgColorInputId, filename);
       }finally{
-        prev.forEach(x => {
-          x.img.style.width = x.width;
-          x.img.style.height = x.height;
-          x.img.style.maxWidth = x.maxWidth;
-          x.img.style.maxHeight = x.maxHeight;
-          x.img.style.objectFit = x.objectFit;
-          x.img.style.position = x.position;
-          x.img.style.left = x.left;
-          x.img.style.top = x.top;
-          x.img.style.transform = x.transform;
-        });
+        node.classList.remove('hide-dd-icons');
       }
     };
   }
 
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', ()=>{
-      bindDdUnderlaySync();
-      patchDdDownload();
-    });
-  }else{
-    bindDdUnderlaySync();
+  function init(){
+    bindDdUnderlays();
     patchDdDownload();
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
   }
 })();
 </script>
 
 
-<script id="ddcard-gradient-and-product-fix-v2">
+<script id="ddcard-product-edit-ratio-fix">
 (function(){
-  function fitContain(slotW, slotH, imgW, imgH){
-    if(!imgW || !imgH) return { width: slotW, height: slotH, leftOffset: 0, topOffset: 0 };
-    const r = imgW / imgH;
-    const sr = slotW / slotH;
-    let w, h;
-    if(r > sr){
-      w = slotW;
-      h = w / r;
-    }else{
-      h = slotH;
-      w = h * r;
+  function clamp(v, min, max){
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function fitContain(boxW, boxH, imgW, imgH){
+    if(!boxW || !boxH || !imgW || !imgH){
+      return { width: boxW || 0, height: boxH || 0 };
     }
-    return {
-      width: w,
-      height: h,
-      leftOffset: (slotW - w) / 2,
-      topOffset: (slotH - h) / 2
-    };
+    const boxRatio = boxW / boxH;
+    const imgRatio = imgW / imgH;
+    let width, height;
+    if(imgRatio > boxRatio){
+      width = boxW;
+      height = width / imgRatio;
+    }else{
+      height = boxH;
+      width = height * imgRatio;
+    }
+    return { width, height };
   }
 
-  function applyDdUnderlayColor(prefix, color){
-    if(!color) return;
-    const canvas = document.getElementById(prefix + 'Canvas');
-    const solidTop = document.getElementById(prefix + 'SolidTop');
-    const gradTop = document.getElementById(prefix + 'GradientTop');
-    const solidBottom = document.getElementById(prefix + 'SolidBottom');
-    const gradBottom = document.getElementById(prefix + 'GradientBottom');
-
-    if(canvas) canvas.style.backgroundColor = color;
-    if(solidTop) solidTop.style.backgroundColor = color;
-    if(solidBottom) solidBottom.style.backgroundColor = color;
-    if(gradTop) gradTop.style.background = 'linear-gradient(to bottom, ' + color + ' 0%, rgba(0,0,0,0) 100%)';
-    if(gradBottom) gradBottom.style.background = 'linear-gradient(to top, ' + color + ' 0%, rgba(0,0,0,0) 100%)';
+  function getPrefixFromBox(box){
+    return box && box.closest('.dd-canvas.square') ? 'ddSquare' : 'ddHoriz';
   }
 
-  function syncDdUnderlaysStrict(){
-    const h = document.getElementById('bg-color-h')?.value || '';
-    const s = document.getElementById('bg-color-s')?.value || '';
-    if(h) applyDdUnderlayColor('ddHoriz', h);
-    if(s) applyDdUnderlayColor('ddSquare', s);
+  function getDdLimits(prefix){
+    return prefix === 'ddSquare'
+      ? { top: 370, bottom: 674, canvasW: 531, canvasH: 792 }
+      : { top: 330, bottom: 674, canvasW: 531, canvasH: 792 };
   }
 
-  function patchRenderProducts(){
-    const script = document.getElementById('ddcard-linked-sync-script');
-    if(!script || window.__ddRenderProductsPatched) return;
-    window.__ddRenderProductsPatched = true;
+  function preserveImageRatio(box, img){
+    if(!box || !img || !img.naturalWidth || !img.naturalHeight) return;
 
-    if(typeof window.syncDdLinkedCanvases === 'function'){
-      const originalSync = window.syncDdLinkedCanvases;
-      window.syncDdLinkedCanvases = function(){
-        syncDdUnderlaysStrict();
-        return originalSync.apply(this, arguments);
+    const prefix = getPrefixFromBox(box);
+    const limits = getDdLimits(prefix);
+
+    const oldW = parseFloat(box.style.width) || box.offsetWidth || 0;
+    const oldH = parseFloat(box.style.height) || box.offsetHeight || 0;
+    if(!oldW || !oldH) return;
+
+    const oldLeft = parseFloat(box.style.left) || 0;
+    const oldTop = parseFloat(box.style.top) || 0;
+    const cx = oldLeft + oldW / 2;
+    const cy = oldTop + oldH / 2;
+
+    const fitted = fitContain(oldW, oldH, img.naturalWidth, img.naturalHeight);
+    let newW = Math.round(fitted.width * 1000) / 1000;
+    let newH = Math.round(fitted.height * 1000) / 1000;
+
+    let newLeft = cx - newW / 2;
+    let newTop = cy - newH / 2;
+
+    newLeft = clamp(newLeft, 0, limits.canvasW - newW);
+    newTop = clamp(newTop, limits.top, limits.bottom - newH);
+
+    box.style.width = newW + 'px';
+    box.style.height = newH + 'px';
+    box.style.left = newLeft + 'px';
+    box.style.top = newTop + 'px';
+
+    const key = box.dataset.key;
+    if(window.ddEditState && window.ddEditState[prefix] && window.ddEditState[prefix].products && key){
+      window.ddEditState[prefix].products[key] = {
+        left: newLeft,
+        top: newTop,
+        width: newW,
+        height: newH
       };
     }
 
-    ['ddHorizProducts','ddSquareProducts'].forEach(id=>{
-      const root = document.getElementById(id);
-      if(!root || root.dataset.ratioPatchBound === '1') return;
-      root.dataset.ratioPatchBound = '1';
-
-      const mo = new MutationObserver(()=>{
-        root.querySelectorAll('.dd-product').forEach(box=>{
-          if(box.dataset.ratioSized === '1') return;
-          const img = box.querySelector('img');
-          if(!img) return;
-
-          const apply = ()=>{
-            const stateKey = box.closest('.dd-canvas.square') ? 'ddSquare' : 'ddHoriz';
-            const slotState = window.ddEditState?.[stateKey]?.products?.[box.dataset.key];
-            if(!slotState) return;
-
-            const fitted = fitContain(slotState.width, slotState.height, img.naturalWidth, img.naturalHeight);
-            const newLeft = slotState.left + fitted.leftOffset;
-            const newTop = slotState.top + fitted.topOffset;
-
-            slotState.left = newLeft;
-            slotState.top = newTop;
-            slotState.width = fitted.width;
-            slotState.height = fitted.height;
-
-            box.style.left = newLeft + 'px';
-            box.style.top = newTop + 'px';
-            box.style.width = fitted.width + 'px';
-            box.style.height = fitted.height + 'px';
-            box.dataset.ratioSized = '1';
-          };
-
-          if(img.complete && img.naturalWidth){
-            apply();
-          }else{
-            img.addEventListener('load', apply, { once:true });
-          }
-        });
-      });
-      mo.observe(root, { childList:true, subtree:true });
-    });
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.style.objectFit = 'contain';
+    img.style.display = 'block';
+    img.style.position = 'static';
+    img.style.transform = 'none';
   }
 
-  function patchDdDownload(){
-    if(window.__ddDownloadGradientPatched) return;
-    window.__ddDownloadGradientPatched = true;
+  function bindImg(box, img){
+    if(!box || !img || img.dataset.ddRatioBound === '1') return;
+    img.dataset.ddRatioBound = '1';
 
-    const original = window.downloadJpgFor;
-    if(typeof original !== 'function') return;
+    const apply = ()=> preserveImageRatio(box, img);
 
-    window.downloadJpgFor = async function(canvasId, bgColorInputId, filename){
-      const isDd = canvasId === 'ddHorizCanvas' || canvasId === 'ddSquareCanvas';
-      if(!isDd){
-        return original(canvasId, bgColorInputId, filename);
+    if(img.complete && img.naturalWidth){
+      apply();
+    }else{
+      img.addEventListener('load', apply, { once: true });
+    }
+
+    const mo = new MutationObserver((muts)=>{
+      for(const m of muts){
+        if(m.type === 'attributes' && m.attributeName === 'src'){
+          if(img.complete && img.naturalWidth) apply();
+          else img.addEventListener('load', apply, { once: true });
+          break;
+        }
       }
-
-      syncDdUnderlaysStrict();
-
-      const node = document.getElementById(canvasId);
-      if(!node){
-        return original(canvasId, bgColorInputId, filename);
-      }
-
-      const imgs = Array.from(node.querySelectorAll('.dd-product img'));
-      const prev = imgs.map(img => ({
-        img,
-        width: img.style.width,
-        height: img.style.height,
-        maxWidth: img.style.maxWidth,
-        maxHeight: img.style.maxHeight,
-        objectFit: img.style.objectFit,
-        position: img.style.position,
-        left: img.style.left,
-        top: img.style.top,
-        transform: img.style.transform
-      }));
-
-      imgs.forEach(img => {
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.maxWidth = '100%';
-        img.style.maxHeight = '100%';
-        img.style.objectFit = 'contain';
-        img.style.position = 'static';
-        img.style.left = 'auto';
-        img.style.top = 'auto';
-        img.style.transform = 'none';
-      });
-
-      try{
-        return await original(canvasId, bgColorInputId, filename);
-      }finally{
-        prev.forEach(x => {
-          x.img.style.width = x.width;
-          x.img.style.height = x.height;
-          x.img.style.maxWidth = x.maxWidth;
-          x.img.style.maxHeight = x.maxHeight;
-          x.img.style.objectFit = x.objectFit;
-          x.img.style.position = x.position;
-          x.img.style.left = x.left;
-          x.img.style.top = x.top;
-          x.img.style.transform = x.transform;
-        });
-      }
-    };
+    });
+    mo.observe(img, { attributes: true, attributeFilter: ['src'] });
   }
 
-  function bindColorInputs(){
-    ['bg-color-h','bg-color-s'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(!el || el.dataset.ddColorStrictBound === '1') return;
-      el.dataset.ddColorStrictBound = '1';
-      el.addEventListener('input', syncDdUnderlaysStrict);
-      el.addEventListener('change', syncDdUnderlaysStrict);
-    });
-    ['bgH','bgS'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(!el || el.dataset.ddColorLoadStrictBound === '1') return;
-      el.dataset.ddColorLoadStrictBound = '1';
-      el.addEventListener('load', ()=>setTimeout(syncDdUnderlaysStrict, 80));
+  function scan(){
+    document.querySelectorAll('#ddHorizProducts .dd-product, #ddSquareProducts .dd-product').forEach(box=>{
+      const img = box.querySelector('img');
+      if(img) bindImg(box, img);
     });
   }
 
   function init(){
-    bindColorInputs();
-    syncDdUnderlaysStrict();
-    patchRenderProducts();
-    patchDdDownload();
-    setTimeout(syncDdUnderlaysStrict, 200);
+    scan();
+
+    ['ddHorizProducts','ddSquareProducts'].forEach(id=>{
+      const root = document.getElementById(id);
+      if(!root || root.dataset.ddRatioRootBound === '1') return;
+      root.dataset.ddRatioRootBound = '1';
+
+      const mo = new MutationObserver(()=> scan());
+      mo.observe(root, { childList: true, subtree: true });
+    });
+
+    const originalSync = window.syncDdLinkedCanvases;
+    if(typeof originalSync === 'function' && !window.__ddRatioSyncWrapped){
+      window.__ddRatioSyncWrapped = true;
+      window.syncDdLinkedCanvases = function(){
+        const result = originalSync.apply(this, arguments);
+        setTimeout(scan, 30);
+        return result;
+      };
+    }
   }
 
   if(document.readyState === 'loading'){
